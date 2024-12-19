@@ -2,8 +2,8 @@ from beachbot.config import logger
 
 try:
     import Jetson.GPIO as GPIO
-except (ModuleNotFoundError, RuntimeError) as ex:
-    logger.warning("Jetson GPIO library not installed or not available! JetsonMotor interface may not be available!")
+except (RuntimeError) as ex:
+    raise RuntimeError("You are not on a Jetson and are attempting to access Jetson GPIO. If you intended to use simulator use --sim flag.")
 
 import threading
 
