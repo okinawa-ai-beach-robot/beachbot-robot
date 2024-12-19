@@ -7,11 +7,8 @@ from .robotinterface import RobotInterface
 
 try:
     import Jetson.GPIO as GPIO
-except Exception:
-    pass
-
-
-
+except (RuntimeError) as ex:
+    raise RuntimeError("You are not on a Jetson and are attempting to access Jetson GPIO. If you intended to use simulator use --sim flag.")
 
 class JetsonRobotV1(RobotInterface):
     def __init__(self):

@@ -52,6 +52,7 @@ tab_names = ["Control", "Recordings"]
 if args.sim:
     robot = VrepRobotSimV1(scene="roarm_m1_locomotion_3finger.ttt")
 else:
+    logger.info("Using real robot as --sim flag is not set")
     robot = JetsonRobotV1()
     
 cam1 = robot.cameradevices[RobotInterface.CAMERATYPE.FRONT]
