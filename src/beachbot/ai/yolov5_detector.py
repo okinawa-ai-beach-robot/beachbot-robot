@@ -23,9 +23,9 @@ class Yolo5Detector(DebrisDetector):
         crop_w = image.shape[1] - intended_x
         crop_h = image.shape[0] - intended_y
         if crop_h > 0:
-            image = image[(crop_h // 2) : (crop_h // 2) + h]
+            image = image[(crop_h // 2) : (crop_h // 2) + intended_y]
         if crop_w > 0:
-            image = image[:, (crop_w // 2) : (crop_w // 2) + w]
+            image = image[:, (crop_w // 2) : (crop_w // 2) + intended_x]
         return image
 
     # Do somhow the inverse mapping of box coordinates to compensate _crop_and_scale_image
