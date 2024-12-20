@@ -47,6 +47,8 @@ class Config:
             value = Path(
                 os.getenv(path_key, str(default))
             )  # str(default) to ensure Path
+            if not value.exists():
+                value.mkdir(parents=True, exist_ok=True)
             setattr(self, path_key, value)
 
 
