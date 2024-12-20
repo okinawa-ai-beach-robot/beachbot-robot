@@ -15,6 +15,15 @@ class RobotInterface(object):
         raise NotImplementedError()
     
     def get_camera_image(self, which:CAMERATYPE=CAMERATYPE.FRONT, stop_others=True):
+        """Take snaphot of camera device.
+
+        Args:
+            which (CAMERATYPE, optional): Which Camera to take snapshot from. Defaults to CAMERATYPE.FRONT.
+            stop_others (bool, optional): Stop recording of all other cameras (make others inactive). Defaults to True.
+
+        Returns:
+            [numpy.Array|None]: Most recent camera snapshot
+        """
         res = None
         if stop_others:
             for cameraid in self.cameradevices.keys():

@@ -1,11 +1,16 @@
+from .motor import Motor
 from ..utils.vrepsimulation import vrep
 
-class VrepMotorSim():
-    def __init__(self, vrep_sim, motor_name, max_velocity=5):
+class VrepMotorSim(Motor):
+    def __init__(self, name:str, vrep_sim, max_velocity=5):
+        super().__init__(name)
         self.vrep_sim = vrep_sim
-        self._motor_name = motor_name
         self._max_velocity=max_velocity
-        self._motor_id = self.vrep_sim.getObject("/"+motor_name)
+        self._init_vrep()
+
+    @vrep
+    def _init_vrep(self):
+        self._motor_id = self.vrep_sim.getObject("/"+self.name)
 
     @vrep    
     def change_speed(self, speed: int) -> None:

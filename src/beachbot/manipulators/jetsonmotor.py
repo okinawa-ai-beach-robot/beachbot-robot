@@ -1,13 +1,14 @@
 from beachbot.config import logger
+from .motor import Motor
 
 try:
     import Jetson.GPIO as GPIO
 except (RuntimeError) as ex:
     raise RuntimeError("You are not on a Jetson and are attempting to access Jetson GPIO. If you intended to use simulator use --sim flag.")
 
-import threading
+import threading, time
 
-class JetsonMotor:
+class JetsonMotor(Motor):
     def __init__(
         self,
         name: str,
@@ -29,7 +30,7 @@ class JetsonMotor:
         :param lo1: Optional GPIO pin for LO1 (error signal from motor driver), should be between 0 and 40.
         :param lo2: Optional GPIO pin for LO2 (error signal from motor driver), should be between 0 and 40.
         """
-        self.name: str = name
+        super().__init__(name)
         self.pwm_pin: int = pwm_pin
         self.in1: int = in1
         self.in2: int = in2
@@ -89,6 +90,7 @@ class JetsonMotor:
             print(f"[{self.name}] LO1: {lo1_value}, LO2: {lo2_value}, Status: {status}")
             time.sleep(0.1)
 
+
     def change_speed(self, speed: int) -> None:
         """
         Change the motor speed.
@@ -99,10 +101,8 @@ class JetsonMotor:
                          positive values represent forward motion,
                          and zero stops the motor.
         """
-        if not -100 <= speed <= 100:
-            raise ValueError(
-                f"Speed must be between -100 and 100 inclusive. Received: {speed}"
-            )
+        super().change_speed(speed)
+
         if speed<1 and speed>-1:
             speed=0
 
@@ -122,9 +122,8 @@ class JetsonMotor:
 
         self.pwm.ChangeDutyCycle(self.duty_cycle_percent)
 
+
     def turn_off(self) -> None:
-        self.change_speed(0)
+        super().turn_off()
         self.pwm.stop()
 
-    def cleanup(self):
-        self.turn_off()
