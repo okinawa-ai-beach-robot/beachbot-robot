@@ -305,12 +305,17 @@ def convert(frame: np.ndarray) -> bytes:
 
 
 
-def add_imgbox(pleft=0, ptop=0, w=0, h=0, clsstr=None, color='#FF0000', align="start"):
+def add_imgbox(pleft=0, ptop=0, w=0, h=0, clsstr=None, conf=None, color='#FF0000', align="start"):
     # color = 'SkyBlue'
     video_image.content += f'<rect x="{pleft*100}%" y="{ptop*100}%" ry="15" height="{h*100}%" width="{w*100}%" fill="none" stroke="{color}" stroke-width="4" />'
     if clsstr is not None:
+        if conf is not None:
+            # make two tspans for two lien text:
+            clsstr = f"<tspan x=\"{pleft*100}%\" dy=\"-1.4em\">{clsstr}</tspan>"
+            clsstr += f"<tspan x=\"{pleft*100}%\" dy=\"1em\">{conf:.2f}</tspan>"
+        
         if align=="start":
-            video_image.content += f'<text text-anchor="start" x="{pleft*100}%" y="{ptop*100}%" stroke="{color}" font-size="2em">{clsstr}</text>'
+            video_image.content += f'<text text-anchor="start" x="{pleft*100}%" y="{ptop*100}%" stroke="{color}" font-size="1em">{clsstr}</text>'
         else:
             video_image.content += f'<text text-anchor="{align}" x="{(pleft+w)*100}%" y="{(ptop+h)*100}%" stroke="{color}" font-size="2em">{clsstr}</text>'
     
@@ -321,7 +326,7 @@ def detection(frame, detector, controller=None):
     boxlist = []
     for classid, confidence, box in zip(class_ids, confidences, boxes):
         if confidence >= 0.01:
-            add_imgbox(*box, detector.list_classes[classid])
+            add_imgbox(*box, detector.list_classes[classid], conf=confidence)
             boxlist.append(BoxDef(left=box[0], top=box[1], w=box[2], h=box[3], class_name=detector.list_classes[classid]))
     if controller is not None:
         controller.update(robot, boxlist)
