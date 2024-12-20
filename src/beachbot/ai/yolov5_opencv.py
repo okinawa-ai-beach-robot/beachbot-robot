@@ -16,6 +16,8 @@ class Yolo5OpenCV(Yolo5Detector):
 
     def __init__(self, model_file, use_accel=True) -> None:
         super().__init__(model_file)
+        if not model_file.endswith(".onnx"):
+            model_file += "/best.onnx"
         model_folder = os.path.dirname(os.path.realpath(model_file))
         with open(model_folder + "/export_info.yaml", 'r') as stream:
             export_info = yaml.safe_load(stream)

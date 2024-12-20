@@ -86,7 +86,7 @@ try:
             with torch.no_grad():
                 results = self.net([inputs], size=row)
 
-            res = results.xyxy[0]
+            res = results.xyxy[0].cpu().numpy()
             result_class_ids = []
             result_confidences = []
             result_boxes = []

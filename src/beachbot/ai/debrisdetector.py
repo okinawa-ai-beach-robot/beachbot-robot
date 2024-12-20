@@ -102,11 +102,14 @@ class DebrisDetector:
         modelfolders.sort(
             key=lambda x: -os.path.getmtime(x),
         )
+        modelfolders.insert(0, "BlobDetector")
         return modelfolders
 
     @staticmethod
     def get_model_type(modelpath):
         model_type = None
+        if modelpath=="BlobDetector":
+            return "BlobDetector"
         if modelpath is not None:
             if modelpath.endswith(os.path.sep + "best.onnx"):
                 modelpath = modelpath[: -len(os.path.sep + "best.onnx")]

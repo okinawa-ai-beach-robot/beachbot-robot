@@ -19,7 +19,10 @@ try:
 
         def __init__(self, model_file, use_accel=True) -> None:
             super().__init__(None)
-            model_folder = os.path.dirname(os.path.realpath(model_file))
+            if "." in model_file.split(os.path.sep)[-1]:
+                model_folder = os.path.dirname(os.path.realpath(model_file))
+            else:
+                model_folder = model_file
             model_type = "nvidia_ssd"
             with open(model_folder + "/export_info.yaml", "r") as stream:
                 export_info = yaml.safe_load(stream)
@@ -70,21 +73,27 @@ try:
             if inputs.dtype != self.dtype:
                 inputs = inputs.astype(self.dtype)
             with torch.no_grad():
-                results = self.net([inputs])
+                results = self.net([torch.tensor(inputs[0,:,:,:], device=next(self.net.parameters()).device)])
 
-            res = results.xyxy[0]
+
+
+        
+            result_boxes=results[0]['boxes'].cpu().numpy()
+            result_scores = results[0]['scores'].cpu().numpy()
+            result_labels = results[0]['labels'].cpu().numpy()
+
+
             result_class_ids = []
             result_confidences = []
-            result_boxes = []
-
-            for i in range(res.shape[0]):
-                if res[i, 4] > confidence_threshold:
-                    result_class_ids.append(int(res[i, 5]))
-                    result_confidences.append(res[i, 4])
-                    left = res[i, 0]
-                    top = res[i, 1]
-                    width = res[i, 2] - res[i, 0]
-                    height = res[i, 3] - res[i, 1]
+            result_boxes_out=[]
+            for i in range(result_boxes.shape[0]):
+                if result_scores[i] > confidence_threshold:
+                    result_class_ids.append(int(result_labels[i]))
+                    result_confidences.append(float(result_scores[i]))
+                    left = result_boxes[i, 0]
+                    top = result_boxes[i, 1]
+                    width = result_boxes[i, 2] - result_boxes[i, 0]
+                    height = result_boxes[i, 3] - result_boxes[i, 1]
                     if units_percent:
                         # percent estimate, relative to image size
                         left /= inputs.shape[1]
@@ -98,9 +107,9 @@ try:
                         width = round(width)
                         height = round(height)
                     bbox = np.array([left, top, width, height])
-                    result_boxes.append(bbox)
+                    result_boxes_out.append(bbox)
 
-            return result_class_ids, result_confidences, result_boxes
+            return result_class_ids, result_confidences, result_boxes_out
 
     DebrisDetector.add_model("SSDMobilenet_Torchvision", SSDMobileNetTorchvision)
 
