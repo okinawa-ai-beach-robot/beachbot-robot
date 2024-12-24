@@ -44,6 +44,8 @@ dependencies = [
     "Jetson.GPIO>=2.1.6",
     "coppeliasim-zmqremoteapi-client>=2.0.4",
     "PyGitHub",
+    "pyzmq",
+    "cbor2",
 ]
 
 requires-python = ">=3.8, <3.9"
