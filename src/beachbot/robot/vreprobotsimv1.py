@@ -7,13 +7,26 @@ from .robotinterface import RobotInterface
 from ..config import config
 from ..utils.vrepsimulation import vrep
 from coppeliasim_zmqremoteapi_client import *
+from pathlib import Path
+from beachbot.utils.github import download as github_download
 
 class VrepRobotSimV1(RobotInterface):
     def __init__(self, scene=None):
         super().__init__()
 
-        self._base_folder_sim = str(config.BEACHBOT_HOME) + os.sep + "Simulation"
+        self._base_folder_sim = config.BEACHBOT_SIMULATION
 
+        self.scene_path=self._base_folder_sim / scene
+        if not self.scene_path.exists():
+            try:
+                # Update pr2 branch when merged
+                github_download(self.scene_path,
+                                config.BEACHBOT_HARDWARE_REPO,
+                                "models/coppeliasim/" + scene,
+                                "pr2",
+                                )
+            except:
+                raise ValueError(f"Could not download simulation {scene} from github nor does it exist locally!")
 
         # Simulator Setup:
         self._vrep_init(scene)
@@ -42,7 +55,11 @@ class VrepRobotSimV1(RobotInterface):
         if scene is None:
             scene = "scene.ttt"
 
-        self._vrep_sim.loadScene(self._base_folder_sim+os.sep+scene)
+        # Convert scene_path to str if Path object
+        if isinstance(self.scene_path, Path):
+            self.scene_path = str(self.scene_path)
+
+        self._vrep_sim.loadScene(self.scene_path)
         self._vrep_sim.startSimulation()
 
     def stop(self):

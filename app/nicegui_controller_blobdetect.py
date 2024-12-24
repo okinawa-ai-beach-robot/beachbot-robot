@@ -49,6 +49,7 @@ tab_names = ["Control", "Recordings"]
 
 
 if args.sim:
+    logger.info("Using simulation as --sim flag is set")
     robot = VrepRobotSimV1(scene="roarm_m1_locomotion_3finger.ttt")
 else:
     logger.info("Using real robot as --sim flag is not set")
