@@ -41,6 +41,7 @@ dependencies = [
     "roboflow==1.1.47",
     "keyring==25.4.1",
     "yolov5==7.0.14",
+    "PyGithub",
 ]
 
 requires-python = ">=3.8, <3.9"

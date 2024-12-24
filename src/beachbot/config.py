@@ -27,6 +27,9 @@ class Config:
     BEACHBOT_MODELS = None
     BEACHBOT_DATASETS = None
 
+    # Github Repos
+    BEACHBOT_HARDWARE_REPO = "okinawa-ai-beach-robot/beach-cleaning-hardware"
+
     _instance = None
 
     def __new__(cls):
