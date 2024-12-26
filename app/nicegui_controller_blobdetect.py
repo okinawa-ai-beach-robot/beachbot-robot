@@ -18,7 +18,6 @@ import signal
 import beachbot
 from beachbot.config import logger
 from beachbot.robot.robotinterface import RobotInterface
-from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
 from beachbot.ai.blobdetectoropencv import BlobDetectorOpenCV
 from beachbot.control.robotcontroller import BoxDef
 from beachbot.control.approachdebris import ApproachDebris as ApproachDebrisController
@@ -50,6 +49,7 @@ tab_names = ["Control", "Recordings"]
 
 if args.sim:
     logger.info("Using simulation as --sim flag is set")
+    from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
     robot = VrepRobotSimV1(scene="roarm_m1_locomotion_3finger.ttt")
 else:
     logger.info("Using real robot as --sim flag is not set")
