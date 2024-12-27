@@ -66,3 +66,11 @@ can be avoided by prefixing the command such as, e.g.,
 ```
 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python nicegui_controller.py
 ```
+
+
+Error `ModuleNotFoundError: No module named 'distutils'`
+(python3 -m pip install --upgrade pip)
+`pip install distutils` (old python versions) or `pip install setuptools`
+
+Error `module 'pkgutil' has no attribute 'ImpImporter'.`
+Numpy is not compatible 24.4 with newer python versions, try to use 26.4 numpy.

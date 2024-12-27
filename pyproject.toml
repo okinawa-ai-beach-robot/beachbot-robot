@@ -21,26 +21,26 @@ classifiers = [
 license = { text = "TBD" }
 
 dependencies = [
-    "numpy==1.24.4",
-    "pyserial==3.5",
-    "scipy==1.10.1",
-    "opencv-python==4.10.0.84",
-    "pyyaml==6.0.1",
-    "onnxruntime==1.18.1",
-    "matplotlib==3.7.5",
+    "numpy~=1.24.4",
+    "pyserial~=3.5",
+    "scipy~=1.10.1",
+    "opencv-python~=4.10.0.84",
+    "pyyaml~=6.0.1",
+    "onnxruntime~=1.18.1",
+    "matplotlib~=3.7.5",
     "fastapi>=0.109.1,<0.110.0", # https://github.com/zauberzeug/nicegui/security/dependabot/27
-    "nicegui==1.4.26",
-    "nicegui-highcharts==1.0.1",
-    "torch==2.3.1",
-    "flask==3.0.3",
-    "pydbus==0.6.0",
-    "torchvision==0.18.1",
-    "platformdirs==4.3.6",
-    "pytest==8.3.3",
-    "huggingface_hub==0.24.7",
-    "roboflow==1.1.47",
-    "keyring==25.4.1",
-    "yolov5==7.0.14",
+    "nicegui~=1.4.26",
+    "nicegui-highcharts~=1.0.1",
+    "torch~=2.2.2",
+    "flask~=3.0.3",
+    "pydbus~=0.6.0",
+    "torchvision~=0.17.2",
+    "platformdirs~=4.3.6",
+    "pytest~=8.3.3",
+    "huggingface_hub~=0.24.7",
+    "roboflow~=1.1.47",
+    "keyring~=25.4.1",
+    "yolov5~=7.0.14",
     "Jetson.GPIO>=2.1.6",
     "coppeliasim-zmqremoteapi-client>=2.0.4",
     "PyGitHub",
@@ -48,7 +48,7 @@ dependencies = [
     "cbor2",
 ]
 
-requires-python = ">=3.8, <3.9"
+requires-python = ">=3.8"
 
 [project.urls]
 Source = "https://github.com/okinawa-ai-beach-robot/python-interface"
