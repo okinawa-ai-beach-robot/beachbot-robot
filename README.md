@@ -3,6 +3,7 @@
 ## Initial setup
 [It is recommended](https://realpython.com/python-virtual-environments-a-primer/#why-do-you-need-virtual-environments) to use virtual environments. Start by creating a virtual environment then installing the beachbot package without dependencies in edit mode (allows you to make use of any recent changes without reinstalling). This will avoid installing any conflicting packages with jetpack on the jetson or otherwise.
 ```
+python3 -m pip install pyzmq cbor2
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -e .
