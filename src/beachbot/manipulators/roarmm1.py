@@ -170,6 +170,8 @@ class RoArmM1(threading.Thread):
                     # robot status package recieved:
                     qs = [float(data.get("A" + str(num + 1), 0)) for num in range(5)]
                     taus = [float(data.get("T" + str(num + 1), 0)) for num in range(5)]
+                    # Convert gripper joint angle into range 0..1
+                    qs[4] = (qs[4] - self.gripper_open) / (self.gripper_close - self.gripper_open)
                     qs_changed = any(
                         [math.fabs(a - b) > 0.1 for a, b in zip(qs, self.qs)]
                     )
@@ -496,3 +498,8 @@ class RoArmM1(threading.Thread):
         angle_1 = alpha + 90
         len_totalXY = LB - self.LEN_B
         return angle_1, len_totalXY
+
+
+class RoArmM1_Custom3FingerGripper(RoArmM1):
+    def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=[42,60]):
+        super().__init__(rate_hz, serial_port, gripper_limits)

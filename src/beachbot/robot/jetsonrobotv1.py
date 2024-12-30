@@ -2,7 +2,7 @@ from ..sensors.jetsoncsicameraopencv import JetsonCsiCameraOpenCV
 from ..sensors.usbcameraopencv import UsbCameraOpenCV
 from ..manipulators.drive import DifferentialDrive
 from ..manipulators.jetsonmotor import JetsonMotor
-from ..manipulators.roarmm1 import RoArmM1
+from ..manipulators.roarmm1 import RoArmM1_Custom3FingerGripper
 from .robotinterface import RobotInterface
 
 try:
@@ -33,7 +33,7 @@ class JetsonRobotV1(RobotInterface):
         self.platform = DifferentialDrive(motor_left, motor_right)
 
         # Init Robot arm, gripper limits [q_open, q_close] must be adjusted to gripper hardware!
-        self.arm = RoArmM1(gripper_limits=[50,60])
+        self.arm = RoArmM1_Custom3FingerGripper()
 
     def stop(self):
         print("TODO: Stop robot")

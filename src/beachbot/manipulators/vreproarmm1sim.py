@@ -114,7 +114,7 @@ class VrepRoArmM1Sim():
         ]  # Joint angle home position
 
         self.q_zero_fac = [
-            1.0,
+            -1.0,
             -1.0,
             -1.0,
             -1.0
@@ -125,6 +125,7 @@ class VrepRoArmM1Sim():
 
         self.vrep_jointnames_arm=['base_to_L1', 'L1_to_L2', 'L2_to_L3', 'L3_to_L4', ]
         #self.vrep_jointnames_gripper=['L4_to_L5_1_A', 'L4_to_L5_1_B' ]
+        self.vrep_jointnames_gripper=['finger_joint_1', 'finger_joint_2', 'finger_joint_3' ]
 
         # Important, mark interacitons with sim via function deccorator '@vrep' to execute them in the same thread that established the simulator connection
         self.init_sim()
@@ -134,7 +135,7 @@ class VrepRoArmM1Sim():
     @vrep
     def init_sim(self):
         self.vrep_jointids_arm = [self.vrep_sim.getObject("/"+jn) for jn in self.vrep_jointnames_arm]
-        #self.vrep_jointids_gripper = [self.vrep_sim.getObject("/"+jn) for jn in self.vrep_jointnames_gripper]
+        self.vrep_jointids_gripper = [self.vrep_sim.getObject("/"+jn) for jn in self.vrep_jointnames_gripper]
 
         self.vrep_base_id = self.vrep_sim.getObject("/arm_mount")
         self.vrep_gripper_id = self.vrep_sim.getObject("/Tip")
@@ -185,18 +186,20 @@ class VrepRoArmM1Sim():
 
 
     def _get_gripper(self):
-        q,t = self.vrep_sim.callScriptFunction("get_gripper",self.vrep_robot_script)
-        print("gripper is", q, t)
+        q,t = self.vrep_sim.callScriptFunction("get_gripper_percent",self.vrep_robot_script)
         return q,t
+    def _set_gripper(self, val_percent):
+        self.vrep_sim.callScriptFunction("set_gripper_percent",self.vrep_robot_script, val_percent)
 
       
     @vrep
-    def get_joint_angles(self):
+    def get_joint_angles(self, do_offsetcompensation=True):
         res = [self.vrep_sim.getJointPosition(jid)*180/math.pi for jid in self.vrep_jointids_arm]
         q,t =  self._get_gripper()
-        res += [q*180/math.pi]
-        for i in range(4):
-            res[i] = res[i] - self.q_zero[i] 
+        res += [q]
+        if do_offsetcompensation:
+            for i in range(4):
+                res[i] = self.q_zero_fac[i]*(res[i] - self.q_zero[i])
         return res
 
     @vrep
@@ -215,7 +218,6 @@ class VrepRoArmM1Sim():
 
     @vrep
     def set_joint_targets(self, qs, do_offsetcompensation=True):
-
         for i in range(4):
             if do_offsetcompensation:
                 qt = self.q_zero[i] + self.q_zero_fac[i]*qs[i]
@@ -223,20 +225,22 @@ class VrepRoArmM1Sim():
                 qt = qs[i]
             self.vrep_sim.setJointTargetPosition(self.vrep_jointids_arm[i], qt*math.pi/180)
         if len(qs)>4:
-            q_gripper = (qs[4])*math.pi/180
-            self.vrep_sim.setJointTargetPosition(self.vrep_jointids_gripper[0], -q_gripper)
-            self.vrep_sim.setJointTargetPosition(self.vrep_jointids_gripper[1], q_gripper)
+            self._set_gripper(qs[4])
+
+    # def _set_gripper(self, pos):
+    #     if pos < 0:
+    #         pos = 0
+    #     if pos > 1:
+    #         pos = 1
+    #     jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
+    #     for finger_jid in self.vrep_jointids_gripper:
+    #         q_gripper=jpos
+    #         self.vrep_sim.setJointTargetPosition(finger_jid, q_gripper)
+
 
     @vrep
     def set_gripper(self, pos):
-        if pos < 0:
-            pos = 0
-        if pos > 1:
-            pos = 1
-        jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
-        qt = self.get_joint_angles()
-        qt[-1] = jpos
-        self.set_joint_targets(qt)
+        self._set_gripper(pos)
 
     @vrep
     def set_joints_enabled(self, is_enabled):
@@ -557,3 +561,8 @@ class VrepRoArmM1Sim():
         angle_1 = alpha + 90
         len_totalXY = LB - self.LEN_B
         return angle_1, len_totalXY
+
+
+class VrepRoArmM1SimCustom3Finger(VrepRoArmM1Sim):
+    def __init__(self, vrep_sim, gripper_limits=[-10,20]):
+        super().__init__(vrep_sim, gripper_limits)
