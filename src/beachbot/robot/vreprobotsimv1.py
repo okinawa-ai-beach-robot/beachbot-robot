@@ -17,16 +17,14 @@ class VrepRobotSimV1(RobotInterface):
         self._base_folder_sim = config.BEACHBOT_SIMULATION
 
         self.scene_path=self._base_folder_sim / scene
-        if not self.scene_path.exists():
-            try:
-                # Update pr2 branch when merged
-                github_download(self.scene_path,
-                                config.BEACHBOT_HARDWARE_REPO,
-                                "models/coppeliasim/" + scene,
-                                "pr2",
-                                )
-            except:
-                raise ValueError(f"Could not download simulation {scene} from github nor does it exist locally!")
+
+        # TODO Update pr2 branch when merged
+        github_download(self.scene_path,
+                        config.BEACHBOT_HARDWARE_REPO,
+                        "models/coppeliasim/" + scene,
+                        "pr2",
+                        overwrite=True
+                        )
 
         # Simulator Setup:
         self._vrep_init(scene)

@@ -13,6 +13,10 @@ def test_github_download():
     remote_path = "README.md"
     branch = "pr2"  # Specify the branch name
     github_token = None  # Provide your GitHub token here if needed
-    download(local_path, repo, remote_path, branch, github_token)
+    download(local_path,
+             repo, remote_path,
+             branch,
+             github_token,
+             overwrite=True)
     # Remove local file
-    local_path.unlink()
+    #local_path.unlink()
