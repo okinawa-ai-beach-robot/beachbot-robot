@@ -4,6 +4,7 @@ from pathlib import Path
 
 from github import Github
 from datetime import datetime, timezone
+from beachbot.config import logger
 
 
 def download(
@@ -27,10 +28,10 @@ def download(
     # Check if the file exists locally
     local_timestamp = None
     if os.path.exists(local_file_path):
-        print(f"File found locally: {local_file_path}")
+        logger.info(f"File found locally: {local_file_path}")
         local_timestamp = datetime.fromtimestamp(os.path.getmtime(local_file_path), tz=timezone.utc)
         if not overwrite:
-            print("Skipping download as overwrite is set to False.")
+            logger.info("Skipping download as overwrite is set to False.")
             return local_file_path
 
     # Authenticate with GitHub
@@ -42,27 +43,27 @@ def download(
         file_content = repo.get_contents(github_path, ref=branch_name)
         # Only download if the file has been modified more recently than local version
         remote_timestamp = file_content.last_modified_datetime
-        print("remote_timestamp", remote_timestamp)
-        print("local_timestamp", local_timestamp)
+        logger.info(f"remote_timestamp: {remote_timestamp}")
+        logger.info("local_timestamp: {local_timestamp}")
         if local_timestamp is not None and remote_timestamp > local_timestamp:
             with open(local_file_path, "wb") as f:
                 sha = file_content.sha
                 blob = repo.get_git_blob(sha)
                 blob_bytes = base64.b64decode(blob.content)
                 f.write(blob_bytes)
-            print(
+            logger.info(
                 f"File downloaded from branch '{branch_name}' on GitHub to: {local_file_path}"
             )
             return local_file_path
 
         else:
-            print(
+            logger.info(
                 f"File already exists locally and is up to date: {local_file_path}"
             )
             return local_file_path
     except Exception as e:
-        print(
+        logger.info(
             f"File not found on branch '{branch_name}' in GitHub repo: {github_repo}/{github_path}"
         )
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
         return None
