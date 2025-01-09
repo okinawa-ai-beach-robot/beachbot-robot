@@ -15,6 +15,7 @@ default_paths = {
     "BEACHBOT_LOGS": Path(_platform_dirs.user_log_dir),
     "BEACHBOT_MODELS": Path(_platform_dirs.user_cache_dir) / "models",
     "BEACHBOT_DATASETS": Path(_platform_dirs.user_cache_dir) / "datasets",
+    "BEACHBOT_SIMULATION": Path(_platform_dirs.user_cache_dir) / "simulations",
 }
 
 
@@ -26,6 +27,10 @@ class Config:
     BEACHBOT_LOGS = None
     BEACHBOT_MODELS = None
     BEACHBOT_DATASETS = None
+    BEACHBOT_SIMULATION = None
+
+    # Github Repos
+    BEACHBOT_HARDWARE_REPO = "okinawa-ai-beach-robot/beach-cleaning-hardware"
 
     _instance = None
 
@@ -47,6 +52,8 @@ class Config:
             value = Path(
                 os.getenv(path_key, str(default))
             )  # str(default) to ensure Path
+            if not value.exists():
+                value.mkdir(parents=True, exist_ok=True)
             setattr(self, path_key, value)
 
 

@@ -18,8 +18,6 @@ import signal
 import beachbot
 from beachbot.config import logger
 from beachbot.robot.robotinterface import RobotInterface
-from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
-from beachbot.robot.jetsonrobotv1 import JetsonRobotV1
 from beachbot.ai.blobdetectoropencv import BlobDetectorOpenCV
 from beachbot.control.robotcontroller import BoxDef
 from beachbot.control.approachdebris import ApproachDebris as ApproachDebrisController
@@ -50,10 +48,14 @@ tab_names = ["Control", "Recordings"]
 
 
 if args.sim:
+    logger.info("Using simulation as --sim flag is set")
+    from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
     robot = VrepRobotSimV1(scene="roarm_m1_locomotion_3finger.ttt")
 else:
+    logger.info("Using real robot as --sim flag is not set")
+    from beachbot.robot.jetsonrobotv1 import JetsonRobotV1
     robot = JetsonRobotV1()
-    
+
 cam1 = robot.cameradevices[RobotInterface.CAMERATYPE.FRONT]
 # retrieve information on video stream:
 capture_width, capture_height = cam1.get_size()

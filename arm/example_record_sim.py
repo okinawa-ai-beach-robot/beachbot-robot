@@ -21,7 +21,7 @@ try:
         # offset=[0,0,0.1] -> we move the target 0.1 meter up, as the finger collide with ground during pickup -> nont reachable all the time
 
         ## Example: to perform an offset (only path pos=0 -> grasping) and keep same drop off position:
-        x_offset = 0.1 # 0.01 meter sideways
+        x_offset = 0.01 # 0.01 meter sideways
         z_offset = 0.05 #lift it up close tot he pickup position, otherwise we collide gripper vs ground!
         offset_fac = 1-pathpospercent # 0percent -> full offset
         simarm.set_target_path_pos(percent=pathpospercent, offset=[offset_fac*x_offset, 0, offset_fac*z_offset])
