@@ -45,7 +45,7 @@ def download(
         remote_timestamp = file_content.last_modified_datetime
         logger.info(f"remote_timestamp: {remote_timestamp}")
         logger.info("local_timestamp: {local_timestamp}")
-        if local_timestamp is not None and remote_timestamp > local_timestamp:
+        if local_timestamp is None or remote_timestamp > local_timestamp:
             with open(local_file_path, "wb") as f:
                 sha = file_content.sha
                 blob = repo.get_git_blob(sha)
