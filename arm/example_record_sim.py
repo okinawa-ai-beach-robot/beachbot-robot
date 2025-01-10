@@ -1,44 +1,88 @@
 import time
+import numpy as np
 from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
 
 robot = VrepRobotSimV1(scene="roarm_m1_recorder_3finger.ttt")
 simarm = robot.arm
+timestep = 0.001
+increment = 0.05
 
 
-def pickup():
+def record_to_npz(filename, timestamps, qs, taus):
+    np.savez(
+        filename,
+        timestamps=np.array(timestamps),
+        qs=np.array(qs),
+        taus=np.array(taus),
+    )
+
+
+def pickup(log_file):
     pathpospercent = 0.25
-    increment = -0.05
-    q = simarm.get_joint_state()[0]
-    tau = simarm.get_joint_state()[1]
+    i = -increment
+    start_time = time.time()
+    timestamps = []
+    qs = []
+    taus = []
 
     while pathpospercent > 0.0:
-        time.sleep(0.1)
+        current_time = time.time()
         q, tau = simarm.get_joint_state()
-        pathpospercent += increment
+        timestamps.append(current_time - start_time)  # Relative timestamp
+        qs.append(q)
+        taus.append(tau)
+        time.sleep(timestep)
+        pathpospercent += i
         simarm.set_target_path_pos(percent=pathpospercent, offset=[0, 0, 0])
 
-    # How to match current state with target, else it will close prior to arriving at ground 
-    time.sleep(2)
+    # Ensure the gripper matches the target state
     q[4] = 1
     simarm.set_joint_targets(q)
+    time.sleep(2)
+
+    # Record final state
+    current_time = time.time()
+    q, tau = simarm.get_joint_state()
+    timestamps.append(current_time - start_time)
+    qs.append(q)
+    taus.append(tau)
+
+    record_to_npz(log_file, timestamps, qs, taus)
 
 
-def toss():
+def toss(log_file):
     pathpospercent = 0.0
-    increment = 0.05
+    i = increment
+    start_time = time.time()
+    timestamps = []
+    qs = []
+    taus = []
 
     while pathpospercent < 1.0:
-        time.sleep(0.1)
+        current_time = time.time()
         q, tau = simarm.get_joint_state()
-        pathpospercent += increment
+        timestamps.append(current_time - start_time)  # Relative timestamp
+        qs.append(q)
+        taus.append(tau)
+        time.sleep(timestep)
+        pathpospercent += i
         simarm.set_target_path_pos(percent=pathpospercent, offset=[0, 0, 0])
 
-    # How to match current state with target, else it will close prior to arriving at ground 
-    time.sleep(3)
+    # Ensure the gripper matches the target state
     q[4] = 0
     simarm.set_joint_targets(q)
+    time.sleep(3)
+
+    # Record final state
+    current_time = time.time()
+    q, tau = simarm.get_joint_state()
+    timestamps.append(current_time - start_time)
+    qs.append(q)
+    taus.append(tau)
+
+    record_to_npz(log_file, timestamps, qs, taus)
 
 
 simarm.go_home()
-pickup()
-toss()
+pickup("pickup_log.npz")
+toss("toss_log.npz")
