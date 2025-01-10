@@ -4,8 +4,8 @@ from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
 
 robot = VrepRobotSimV1(scene="roarm_m1_recorder_3finger.ttt")
 simarm = robot.arm
-timestep = 0.001
-increment = 0.05
+timestep = 0.2
+increment = 0.025
 
 
 def record_to_npz(filename, timestamps, qs, taus):
