@@ -319,20 +319,23 @@ class VrepRoArmM1Sim():
     @vrep
     def get_gripper_pos(self):
         """Return current gripper position in cartesian space (x,y,z)
-        If available target positions for inverse kinematic will be appended.
-
-        returns 
+        returns
         (x,y,z) gripper position or
+        """
+        pos = self.vrep_sim.getObjectPosition(self.vrep_gripper_id)
+        return np.array(pos)
+
+    @vrep
+    def get_gripper_target(self):
+        """Return current gripper target position in cartesian space (x,y,z)
+        returns
         (x,y,z,x_target,y_target,z_target) if inverse kinemtaic target is available
         """
-
-        # Align inv_kin coordinates and sim coordinates (not used)
-        # pos = self.vrep_sim.getObjectPosition(self.vrep_gripper_id, self.vrep_base_id)
-        # return [pos[1]*1000, -pos[0]*1000, pos[2]*1000]
-        pos = self.vrep_sim.getObjectPosition(self.vrep_gripper_id)
         if self.vrep_gripper_target_id:
-            pos += self.vrep_sim.getObjectPosition(self.vrep_gripper_target_id)
-        return pos
+            target = self.vrep_sim.getObjectPosition(self.vrep_gripper_target_id)
+            return np.array(target)
+        else:
+            return None
 
 
     def replay_trajectory(self, qs, ts=None, freq=20, gripper_overwrite=None):
