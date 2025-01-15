@@ -34,22 +34,34 @@ def load_default_trajectories():
     toss_trajectory = Trajectory.from_file('beachbot.assets/toss.npz')
 
 
-def replay_trajectory(self, qs, ts=None, freq=20):
-    # Initial position may take some time
+def replay_trajectory(self,
+                      qs: np.ndarray,
+                      ts: np.ndarray = None,
+                      timestep_length: float = 0.01):
+    """
+    Replay a trajectory.
+
+    Parameters:
+    - qs: numpy.ndarray, shape (n, m), where n is the number of time steps and m is the number of joints.
+    - ts: numpy.ndarray, shape (n,), optional, timestamps for each time step.
+    - timestep_length: float, optional, length of each time step in seconds. Will default to 0.01 if ts is not provided.
+    """
+
+    # Set initial position as initial timestamp should be around 0
     self.set_joint_targets(qs[0])
     self.wait_target_arrival()
     sleep_time = 0
 
-    for t in range(1, qs.shape[0]):
-        self.set_joint_targets(qs[t])
-        if ts is None:
-            # fixed replay frequency
-            sleep_time = (1.0 / freq)
-        else:
-            # wait for timestamp
+    if ts is None:
+        for t in range(1, qs.shape[0]):
+            self.set_joint_targets(qs[t])
+            sleep_time = timestep_length
+            sleep(sleep_time)
+    else:
+        for t in range(1, qs.shape[0]):
+            self.set_joint_targets(qs[t])
             sleep_time = ts[t] - ts[t-1]
-
-        sleep(sleep_time)
+            sleep(sleep_time)
 
 
 def wait_target_arrival(self, max_distance=0.02, timeout=10, polling_interval=0.1):
@@ -64,6 +76,7 @@ def wait_target_arrival(self, max_distance=0.02, timeout=10, polling_interval=0.
     Returns:
     - bool: True if the target was reached, False if timed out.
     """
+
     t_start = time()
     while True:
         pos = self.get_gripper_pos()
@@ -77,6 +90,10 @@ def wait_target_arrival(self, max_distance=0.02, timeout=10, polling_interval=0.
 
 def pickup(self):
     self.replay_trajectory(pickup_trajectory)
+
+
+def toss(self):
+    self.replay_trajectory(toss_trajectory)
 
 
 pickup_trajectory: Trajectory = None
