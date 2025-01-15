@@ -1,27 +1,13 @@
-from beachbot.manipulators import RoArmM1
-import time
 import numpy as np
+from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
+from beachbot.manipulators.arm import pickup_trajectory, toss_trajectory
 
-arm1 = RoArmM1(gripper_limits=[50,60])
-arm1.set_joints_enabled(True)
-arm1.refresh_robot_state()
-arm1.go_home()
+robot = VrepRobotSimV1(scene="roarm_m1_recorder_3finger.ttt")
+simarm = robot.arm
 
-data = np.load("test_path.npz")
+data = np.load("pickup.npz")
 
 qs = data['qs']
 taus = data['taus']
 ts = data['ts']
-
-print("tsteps*", ts)
-
-print("Recoding entries:", qs.shape[0])
-print("Recoding duration:", ts[-1])
-# qs: joint angles
-# taus: torques
-# ts: timestamps
-print("\n\nStart replay (replay based on record time stamps)...")
-print("recording")
-arm1.replay_trajectory(qs, ts)
-print("Done!")
-
+simarm.replay_trajectory(qs, ts)

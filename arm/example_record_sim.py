@@ -1,21 +1,24 @@
 import time
 import numpy as np
 from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
+from pathlib import Path
 
 robot = VrepRobotSimV1(scene="roarm_m1_recorder_3finger.ttt")
 simarm = robot.arm
 
 
 def record_to_npz(filename, timestamps, qs, taus):
+    # create parent directories if they don't exist
+    Path(filename).parent.mkdir(parents=True, exist_ok=True)
     np.savez(
         filename,
-        timestamps=np.array(timestamps),
+        ts=np.array(timestamps),
         qs=np.array(qs),
         taus=np.array(taus),
     )
 
 
-def pickup(log_file, pathpospercent):
+def pickup(trajectory_file, pathpospercent):
     i = -increment
     start_time = time.time()
     timestamps = []
@@ -30,7 +33,7 @@ def pickup(log_file, pathpospercent):
         taus.append(tau)
         pathpospercent += i
         simarm.set_target_path_pos(percent=pathpospercent)
-        wait_target_arrival()
+        simarm.wait_target_arrival()
 
     # Ensure the gripper matches the target state
     q[4] = 1
@@ -43,10 +46,10 @@ def pickup(log_file, pathpospercent):
     qs.append(q)
     taus.append(tau)
 
-    record_to_npz(log_file, timestamps, qs, taus)
+    record_to_npz(trajectory_file, timestamps, qs, taus)
 
 
-def toss(log_file, pathpospercent):
+def toss(trajectory_file, pathpospercent):
     pathpospercent = 0.0
     i = increment
     start_time = time.time()
@@ -62,7 +65,7 @@ def toss(log_file, pathpospercent):
         taus.append(tau)
         pathpospercent += i
         simarm.set_target_path_pos(percent=pathpospercent, offset=[0, 0, 0])
-        wait_target_arrival()
+        simarm.wait_target_arrival()
 
     # Ensure the gripper matches the target state
     q[4] = 0
@@ -74,22 +77,12 @@ def toss(log_file, pathpospercent):
     timestamps.append(current_time - start_time)
     qs.append(q)
     taus.append(tau)
-
-    record_to_npz(log_file, timestamps, qs, taus)
-
-
-def wait_target_arrival():
-    pos = simarm.get_gripper_pos()
-    target = simarm.get_gripper_target()
-    while np.linalg.norm(pos - target) > 0.02:
-        time.sleep(0.1)
-        pos = simarm.get_gripper_pos()
-        target = simarm.get_gripper_target()
+    record_to_npz(trajectory_file, timestamps, qs, taus)
 
 
 increment = 0.01
 pathpospercent = 0.25
 simarm.set_target_path_pos(pathpospercent)
-wait_target_arrival()
-pickup("pickup_log.npz", pathpospercent)
-toss("toss_log.npz", pathpospercent)
+simarm.wait_target_arrival()
+pickup("assets/pickup.npz", pathpospercent)
+toss("assets/toss.npz", pathpospercent)
