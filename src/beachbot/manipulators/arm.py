@@ -121,7 +121,224 @@ class Arm:
 
         return angle_1, angle_2, angle_3, angle_4
 
+    def get_joint_angles(self):
+        with self._status_lock:
+            res = self.qs.copy()
+        return res
 
+    def get_joint_torques(self):
+        with self._status_lock:
+            res = self.taus.copy()
+        return res
+
+    def get_joint_state(self):
+        res = (self.get_joint_angles(), self.get_joint_torques())
+        return res
+
+    def set_joint_targets(self):
+        """
+        Overridden by child classes as API differs greatly
+        """
+        pass
+
+    def set_gripper(self, pos):
+        """
+        Overridden by child classes as I still don't understand why _set_gripper is necessary in vrep
+        """
+
+    def set_joints_enabled(self, is_enabled):
+        """
+        Overridden by child classes as API differs greatly
+        TODO @Jeffrey add what and how this is supposed to work
+        as it is very unclear at the moment.
+        """
+        pass
+
+    def wait_for_movement(self, timeout=None):
+        with self._joint_changed:
+            res = self._joint_changed.wait(timeout)
+        return res
+
+    def record_trajectory(
+        self, resample_steps=-1, wait_time_max=10, max_record_steps=250, save_path=None
+    ):
+        self.set_joints_enabled(False)
+        time.sleep(0.5)
+        q, tau = self.get_joint_state()
+        qs = [q]
+        taus = [tau]
+        ts = [0]
+        ts_start = time.time()
+
+        rec_steps = 0
+        while self.wait_for_movement(wait_time_max) and rec_steps <= max_record_steps:
+            # Robot moved, record new position
+            q, tau = self.get_joint_state()
+            qs.append(q)
+            taus.append(tau)
+            ts.append(time.time() - ts_start)
+            rec_steps += 1
+
+        qs = np.stack(qs)
+        taus = np.stack(taus)
+
+        if resample_steps > 2:
+            qs_resample = signal.resample(qs, resample_steps)
+            qs_resample[-1, :] = qs[-1, :]
+            qs = qs_resample
+
+            taus_resample = signal.resample(taus, resample_steps)
+            taus_resample[-1, :] = taus[-1, :]
+            taus = taus_resample
+
+            ts_resample = signal.resample(ts, resample_steps)
+            ts_resample[-1, :] = ts[-1, :]
+            ts = ts_resample
+
+        if save_path:
+            np.savez(save_path, qs=qs, taus=taus, ts=ts)
+
+        return qs, taus, ts
+
+    def replay_trajectory(self, qs, ts=None, freq=20, gripper_overwrite=None):
+        self.set_joints_enabled(True)
+        time.sleep(0.5)
+        ts_start = time.time()
+
+        for t in range(qs.shape[0]):
+            if gripper_overwrite is not None:
+                qs[t][-1]=gripper_overwrite
+            self.set_joint_targets(qs[t])
+            wtime = 0
+            ts_now = time.time()
+            if ts is None:
+                # fixed replay frequency
+                wtime = (1.0 / freq) - (ts_now - ts_start)
+                ts_start = ts_now
+            else:
+                # wait for timestamp
+                wtime = ts[t] - (ts_now - ts_start)
+
+            if wtime > 0:
+                time.sleep(wtime)
+
+    def go_home(self):
+        self.set_joint_targets(self.q_home)
+        time.sleep(1)
+
+    def is_ready(self):
+        """Robot arm connected and ready for operation"""
+        return self.is_connected
+
+    def get_position(self):
+        """Returns the current position of the gripper"""
+        pass
+
+    # Helper function for inverse kinematic calculations,
+    # as provided by waveshare (rewritten in python)
+    def simpleLinkageIK(self, LA, LB, aIn, bIn):
+        if bIn == 0:
+            psi = (
+                math.acos((LA * LA + aIn * aIn - LB * LB) / (2 * LA * aIn))
+                * 180
+                / math.pi
+            )
+            alpha = 90 - psi
+            omega = (
+                math.acos((aIn * aIn + LB * LB - LA * LA) / (2 * aIn * LB))
+                * 180
+                / math.pi
+            )
+            beta = psi + omega
+        else:
+            L2C = aIn * aIn + bIn * bIn
+            LC = math.sqrt(L2C)
+            lamb = math.atan(bIn / aIn) * 180 / math.pi
+            psi = math.acos((LA * LA + L2C - LB * LB) / (2 * LA * LC)) * 180 / math.pi
+            alpha = 90 - lamb - psi
+            omega = math.acos((LB * LB + L2C - LA * LA) / (2 * LC * LB)) * 180 / math.pi
+            beta = psi + omega
+
+        delta = 90 - alpha - beta
+
+        if math.isnan(alpha) or math.isnan(beta) or math.isnan(delta):
+            raise Exception("NAN")
+
+        angle_2 = alpha
+        angle_3 = beta
+        angle_IKE = delta
+        return angle_2, angle_3, angle_IKE
+
+    def EoAT_IK(self, angleInput):
+        if angleInput == 90:
+            betaGenOut = angleInput - self.LEN_G
+            betaRad = betaGenOut * math.pi / 180
+            angleRad = angleInput * math.pi / 180
+            aGenOut = self.LEN_E
+            bGenOut = self.LEN_F
+        elif angleInput < 90:
+            betaGenOut = 90 - angleInput
+            betaRad = betaGenOut * math.pi / 180
+            angleRad = angleInput * math.pi / 180
+            aGenOut = math.cos(angleRad) * self.LEN_F + math.cos(betaRad) * self.LEN_E
+            bGenOut = math.sin(angleRad) * self.LEN_F - math.sin(betaRad) * self.LEN_E
+            betaGenOut = -betaGenOut
+        elif angleInput > 90:
+            betaGenOut = self.LEN_G - (180 - angleInput)
+            betaRad = betaGenOut * math.pi / 180
+            angleRad = angleInput * math.pi / 180
+            aGenOut = (
+                -math.cos(math.pi - angleRad) * self.LEN_F
+                + math.cos(betaRad) * self.LEN_E
+            )
+            bGenOut = (
+                math.sin(math.pi - angleRad) * self.LEN_F
+                + math.sin(betaRad) * self.LEN_E
+            )
+
+        if math.isnan(betaGenOut):
+            raise Exception("NAN")
+
+        angle_EoAT = betaGenOut
+        len_a = aGenOut
+        len_b = bGenOut
+        return angle_EoAT, len_a, len_b
+
+    def wigglePlaneIK(self, LA, aIn, bIn):
+        bIn = -bIn
+        if bIn > 0:
+            L2C = aIn * aIn + bIn * bIn
+            LC = math.sqrt(L2C)
+            lamb = math.atan(aIn / bIn) * 180 / math.pi
+            psi = math.acos(LA / LC) * 180 / math.pi
+            LB = math.sqrt(L2C - LA * LA)
+            alpha = psi + lamb - 90
+        elif bIn == 0:
+            alpha = 90 + math.asin(LA / aIn) * 180 / math.pi
+            L2C = aIn * aIn + bIn * bIn
+            LB = math.sqrt(L2C)
+        elif bIn < 0:
+            bIn = -bIn
+            L2C = aIn * aIn + bIn * bIn
+            LC = math.sqrt(L2C)
+            lamb = math.atan(aIn / bIn) * 180 / math.pi
+            psi = math.acos(LA / LC) * 180 / math.pi
+            LB = math.sqrt(L2C - LA * LA)
+            alpha = 90 - lamb + psi
+
+        if math.isnan(alpha):
+            raise Exception("NAN")
+
+        angle_1 = alpha + 90
+        len_totalXY = LB - self.LEN_B
+        return angle_1, len_totalXY
+
+    def move_to(self, targetpos):
+        """Move gripper to a certain target position"""
+        pass
+
+    def cleanup(self):
+        pass
 
 
 class Trajectory:
