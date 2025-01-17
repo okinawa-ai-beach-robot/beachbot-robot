@@ -5,9 +5,10 @@ from beachbot.utils.vrepsimulation import vrep
 from beachbot.config import config
 import time
 from scipy import signal
+from beachbot.manipulators.arm import Arm
 
 
-class VrepRoArmM1Sim():
+class VrepRoArmM1Sim(Arm):
     def __init__(self, vrep_sim, gripper_limits=None) -> None:
         self.vrep_sim = vrep_sim
         self.is_connected = False

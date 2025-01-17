@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from beachbot.config import config
+from beachbot.manipulators.arm import Arm
 import threading
 import time
 import json
@@ -8,7 +9,7 @@ from scipy import signal
 import serial
 
 
-class RoArmM1(threading.Thread):
+class RoArmM1(Arm):
     def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=None) -> None:
         # Init superclass thread
         super().__init__()
