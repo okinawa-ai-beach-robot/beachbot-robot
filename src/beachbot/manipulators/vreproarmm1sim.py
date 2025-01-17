@@ -1,27 +1,10 @@
 import os
 import math
-
 import numpy as np
-
-from ..utils.vrepsimulation import vrep
-from ..config import config
-
-try:
-    from scipy import signal
-except:
-    print("scipy requites dorgraded numpy version... do a pip install numpy==1.22")
-
-import threading, time, io
-import json
-
-try:
-    import serial
-
-    _ser_intf = serial.Serial
-except:
-    print(
-        "Could not load pyserial, please make sure -pyserial- and not package -serial- is installed!"
-    )
+from beachbot.utils.vrepsimulation import vrep
+from beachbot.config import config
+import time
+from scipy import signal
 
 
 def rotate(point, angle, origin=(0, 0)):
