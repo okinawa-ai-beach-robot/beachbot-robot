@@ -14,61 +14,11 @@ class RoArmM1(threading.Thread):
         super().__init__()
         # do not block on exit:
         self.daemon = True
-
         self.interval = 1.0 / rate_hz
         self.is_connected = False
-
-        self.basepath = config.BEACHBOT_HOME
-
-        # Robot arm definition (mechanical structure):
-        self.LEN_A = 115.432  # Height offset of base
-        self.LEN_B = (
-            41.0513  # Translation (x) offset of base rotation joint (1st joint)
-        )
-        self.LEN_C = 168.8579  # Length of first arm link (joint 2 to 3)
-        self.LEN_D = 127.9234  # Length of secon arm link (joint 3 to 4)
-
-        self.LEN_E = 108.5357  # Length of gripper (from joint4 to grasping poit)
-        self.LEN_F = 7.7076  # Z Offset of gripper
-
-        self.LEN_G = (
-            90.0  # Offset (degree) of last rotational joint (joint 4) of gripper
-        )
-        self.LEN_H = (
-            -13.75
-        )  # shift along y of 1st rotational axis (base, joint 1) of arm. Arm is mounted "off-center".
-
-        # Factor (constant) for modulation of relative orintation of joint4 to desired gripper orientation
-        self.rateTZ = 2
-
-
-
-        # Home position in cartesian space:
-        self.initPosX = self.LEN_B + self.LEN_D + self.LEN_E
-        self.initPosY = self.LEN_H
-        self.initPosZ = self.LEN_A + self.LEN_C - self.LEN_F
-        self.initPosT = 90
-
-        if gripper_limits is None:
-            self.gripper_open = 180
-            self.gripper_close = 260
-        else:
-            self.gripper_open = gripper_limits[0]
-            self.gripper_close = gripper_limits[1]
-
-        self.q_home = [
-            180.0,
-            -12,
-            100.2832031,
-            45.0,
-            self.gripper_open,
-        ]  # Joint angle home position
-        self.qs = self.q_home
-        
-        self.device=None
+        self.device = None
         if serial_port is not None:
-            
-            self.is_connected=False
+            self.is_connected = False
             try:
                 self.device = serial.Serial(
                     serial_port, timeout=0, baudrate=115200
@@ -77,7 +27,6 @@ class RoArmM1(threading.Thread):
                 self.is_connected = self.device.isOpen()
             except Exception as e:
                 print("error open serial port: " + str(e))
-            
 
         self._write_lock = threading.Lock()
         self._status_lock = threading.Lock()

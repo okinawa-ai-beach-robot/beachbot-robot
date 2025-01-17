@@ -5,9 +5,58 @@ try:
     from importlib.resources import files  # Python 3.9+
 except ImportError:
     from importlib_resources import files  # Backport for Python 3.8
+from beachbot.config import config
 
 
 class Arm:
+
+    def __init__(self, gripper_limits=None) -> None:
+        self.basepath = config.BEACHBOT_HOME
+
+        # Robot arm definition (mechanical structure):
+        self.LEN_A = 115.432  # Height offset of base
+        self.LEN_B = (
+            41.0513  # Translation (x) offset of base rotation joint (1st joint)
+        )
+        self.LEN_C = 168.8579  # Length of first arm link (joint 2 to 3)
+        self.LEN_D = 127.9234  # Length of secon arm link (joint 3 to 4)
+
+        self.LEN_E = 108.5357  # Length of gripper (from joint4 to grasping poit)
+        self.LEN_F = 7.7076  # Z Offset of gripper
+
+        self.LEN_G = (
+            90.0  # Offset (degree) of last rotational joint (joint 4) of gripper
+        )
+        self.LEN_H = (
+            -13.75
+        )  # shift along y of 1st rotational axis (base, joint 1) of arm. Arm is mounted "off-center".
+
+        # Factor (constant) for modulation of relative orintation of joint4 to desired gripper orientation
+        self.rateTZ = 2
+
+        # Home position in cartesian space:
+        self.initPosX = self.LEN_B + self.LEN_D + self.LEN_E
+        self.initPosY = self.LEN_H
+        self.initPosZ = self.LEN_A + self.LEN_C - self.LEN_F
+        self.initPosT = 90
+
+        if gripper_limits is None:
+            self.gripper_open = 180
+            self.gripper_close = 260
+        else:
+            self.gripper_open = gripper_limits[0]
+            self.gripper_close = gripper_limits[1]
+
+        self.q_home = [
+            180.0,
+            -12,
+            100.2832031,
+            45.0,
+            self.gripper_open,
+        ]  # Joint angle home position
+
+        self.qs = self.q_home
+
 
     def fkin(self, qs):
         """
