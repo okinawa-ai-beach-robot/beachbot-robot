@@ -41,6 +41,8 @@ class Arm:
         self.initPosZ = self.LEN_A + self.LEN_C - self.LEN_F
         self.initPosT = 90
 
+        self.gripper_open = None
+        self.gripper_close = None
         if gripper_limits is None:
             self.gripper_open = 180
             self.gripper_close = 260

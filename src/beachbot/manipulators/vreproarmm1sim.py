@@ -10,6 +10,7 @@ from beachbot.manipulators.arm import Arm
 
 class VrepRoArmM1Sim(Arm):
     def __init__(self, vrep_sim, gripper_limits=None) -> None:
+        super().__init__(gripper_limits)
         self.vrep_sim = vrep_sim
         self.is_connected = False
         # Joint offsets to transform robot joints to simulator joints:

@@ -12,7 +12,7 @@ import serial
 class RoArmM1(Arm):
     def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=None) -> None:
         # Init superclass thread
-        super().__init__()
+        super().__init__(gripper_limits)
         # do not block on exit:
         self.daemon = True
         self.interval = 1.0 / rate_hz
