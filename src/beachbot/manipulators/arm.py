@@ -1,4 +1,5 @@
 from time import sleep, time
+from pathlib import Path
 import numpy as np
 import math
 try:
@@ -379,9 +380,8 @@ def translate(point, offset):
     return point[0] + offset[0], point[1] + offset[1]
 
 
-def load_trajectory(trajectory: str):
-    trajectory_path = files('beachbot.assets').joinpath(trajectory)
-    data = np.load(trajectory_path)
+def load_trajectory(trajectory_path: Path):
+    data = np.load(str(trajectory_path))
     ts = data["ts"]
     qs = data["qs"]
     taus = data["taus"]
@@ -390,8 +390,11 @@ def load_trajectory(trajectory: str):
 
 def load_default_trajectories():
     global pickup_trajectory, toss_trajectory
-    pickup_trajectory = Trajectory.from_file('beachbot.assets/pickup.npz')
-    toss_trajectory = Trajectory.from_file('beachbot.assets/toss.npz')
+    asset_path = Path(__file__).parent.parent / 'assets'
+    pickup_path = asset_path / 'pickup.npz'
+    toss_path = asset_path / 'toss.npz'
+    pickup_trajectory = Trajectory.from_file(pickup_path)
+    toss_trajectory = Trajectory.from_file(toss_path)
 
 
 def replay_trajectory(self,
