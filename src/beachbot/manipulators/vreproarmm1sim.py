@@ -56,11 +56,6 @@ class VrepRoArmM1Sim():
         if self.vrep_path_script is not None:
             self.vrep_sim.callScriptFunction("setPathPosition",self.vrep_path_script,percent, offset)
 
-
-
-
-
-
     def set_cart_pos(self, pos_target, tool_angle):
         # target relative to home position:
         qs = self.inv_kin([t+o for  t,o in zip(pos_target, self.cart_home)], tool_angle+self.cart_gripper_angle_home)
@@ -91,16 +86,12 @@ class VrepRoArmM1Sim():
 
 
         self.set_joint_targets(qs,do_offsetcompensation=True)
-
-
-
     def _get_gripper(self):
         q,t = self.vrep_sim.callScriptFunction("get_gripper_percent",self.vrep_robot_script)
         return q,t
     def _set_gripper(self, val_percent):
         self.vrep_sim.callScriptFunction("set_gripper_percent",self.vrep_robot_script, val_percent)
 
-      
     @vrep
     def get_joint_angles(self, do_offsetcompensation=True):
         res = [self.vrep_sim.getJointPosition(jid)*180/math.pi for jid in self.vrep_jointids_arm]
@@ -118,12 +109,10 @@ class VrepRoArmM1Sim():
         res += [t]
         return res
 
-    
     def get_joint_state(self):
         #with self._status_lock:
         res = (self.get_joint_angles(), self.get_joint_torques())
         return res
-
 
     @vrep
     def set_joint_targets(self, qs, do_offsetcompensation=True):
@@ -135,17 +124,6 @@ class VrepRoArmM1Sim():
             self.vrep_sim.setJointTargetPosition(self.vrep_jointids_arm[i], qt*math.pi/180)
         if len(qs)>4:
             self._set_gripper(qs[4])
-
-    # def _set_gripper(self, pos):
-    #     if pos < 0:
-    #         pos = 0
-    #     if pos > 1:
-    #         pos = 1
-    #     jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
-    #     for finger_jid in self.vrep_jointids_gripper:
-    #         q_gripper=jpos
-    #         self.vrep_sim.setJointTargetPosition(finger_jid, q_gripper)
-
 
     @vrep
     def set_gripper(self, pos):
@@ -213,7 +191,7 @@ class VrepRoArmM1Sim():
             np.savez(save_path, qs=qs, taus=taus, ts=ts)
 
         return qs, taus, ts
-    
+
     def cleanup(self):
         pass
 
@@ -237,7 +215,6 @@ class VrepRoArmM1Sim():
             return np.array(target)
         else:
             return None
-
 
     def replay_trajectory(self, qs, ts=None, freq=20, gripper_overwrite=None):
         print("replay")
@@ -423,7 +400,6 @@ class VrepRoArmM1Sim():
         angle_1 = alpha + 90
         len_totalXY = LB - self.LEN_B
         return angle_1, len_totalXY
-
 
 class VrepRoArmM1SimCustom3Finger(VrepRoArmM1Sim):
     def __init__(self, vrep_sim, gripper_limits=[-10,20]):

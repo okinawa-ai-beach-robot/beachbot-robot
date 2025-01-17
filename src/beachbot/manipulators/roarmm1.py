@@ -100,7 +100,7 @@ class RoArmM1(threading.Thread):
         with self._status_lock:
             res = self.qs.copy()
         return res
-    
+
     def set_max_torque(self, jointnr, maxvalue):
         if jointnr>0 and jointnr<6 and maxvalue>=0 and maxvalue<=1000:
             data = json.dumps(
@@ -346,7 +346,6 @@ class RoArmM1(threading.Thread):
         angle_1 = alpha + 90
         len_totalXY = LB - self.LEN_B
         return angle_1, len_totalXY
-
 
 class RoArmM1_Custom3FingerGripper(RoArmM1):
     def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=[42,60]):
