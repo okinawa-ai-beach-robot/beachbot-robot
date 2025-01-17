@@ -343,6 +343,32 @@ class Arm:
     def cleanup(self):
         pass
 
+    def wait_target_arrival(self, max_distance=0.02, timeout=10, polling_interval=0.1):
+        """
+        Wait until the gripper position is within the target range or timeout.
+        Parameters:
+        - max_distance: float, maximum allowable distance to the target.
+        - timeout: float, maximum time to wait in seconds.
+        - polling_interval: float, time between position checks.
+        Returns:
+        - bool: True if the target was reached, False if timed out.
+        """
+        t_start = time()
+        while True:
+            pos = self.get_gripper_pos()
+            target = self.get_gripper_target()
+            if np.linalg.norm(pos - target) <= max_distance:
+                return True
+            if time() - t_start > timeout:
+                return False
+            sleep(polling_interval)
+
+    def pickup(self):
+        self.replay_trajectory(pickup_trajectory)
+
+    def toss(self):
+        self.replay_trajectory(toss_trajectory)
+
 
 class Trajectory:
     def __init__(self, ts=None, qs=None, taus=None):
@@ -427,38 +453,6 @@ def replay_trajectory(self,
             self.set_joint_targets(qs[t])
             sleep_time = ts[t] - ts[t-1]
             sleep(sleep_time)
-
-
-def wait_target_arrival(self, max_distance=0.02, timeout=10, polling_interval=0.1):
-    """
-    Wait until the gripper position is within the target range or timeout.
-
-    Parameters:
-    - max_distance: float, maximum allowable distance to the target.
-    - timeout: float, maximum time to wait in seconds.
-    - polling_interval: float, time between position checks.
-
-    Returns:
-    - bool: True if the target was reached, False if timed out.
-    """
-
-    t_start = time()
-    while True:
-        pos = self.get_gripper_pos()
-        target = self.get_gripper_target()
-        if np.linalg.norm(pos - target) <= max_distance:
-            return True
-        if time() - t_start > timeout:
-            return False
-        sleep(polling_interval)
-
-
-def pickup(self):
-    self.replay_trajectory(pickup_trajectory)
-
-
-def toss(self):
-    self.replay_trajectory(toss_trajectory)
 
 
 pickup_trajectory: Trajectory = None
