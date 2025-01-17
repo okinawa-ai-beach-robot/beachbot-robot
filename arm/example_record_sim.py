@@ -84,5 +84,8 @@ increment = 0.01
 pathpospercent = 0.25
 simarm.set_target_path_pos(pathpospercent)
 simarm.wait_target_arrival()
-pickup("assets/pickup.npz", pathpospercent)
-toss("assets/toss.npz", pathpospercent)
+assets_path = "src/beachbot/assets/"
+pickup_path = assets_path + "pickup.npz"
+toss_path = assets_path + "toss.npz"
+pickup(pickup_path, pathpospercent)
+toss(toss_path, pathpospercent)
