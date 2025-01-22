@@ -204,7 +204,6 @@ class Arm:
         return qs, taus, ts
 
     def replay_trajectory(self, qs, ts=None, freq=20):
-        self.set_joints_enabled(True)
         # Set initial position and wait
         self.set_joint_targets(qs[0])
         sleep(0.5)
