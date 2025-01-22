@@ -2,11 +2,8 @@ from time import sleep, time
 from pathlib import Path
 import numpy as np
 import math
-try:
-    from importlib.resources import files  # Python 3.9+
-except ImportError:
-    from importlib_resources import files  # Backport for Python 3.8
 from beachbot.config import config
+import threading
 
 
 class Arm:
@@ -59,7 +56,11 @@ class Arm:
         ]  # Joint angle home position
 
         self.qs = self.q_home
+        self.qs_target = None
 
+        self._write_lock = threading.Lock()
+        self._status_lock = threading.Lock()
+        self._joint_changed = threading.Condition()
 
     def fkin(self, qs):
         """
@@ -126,17 +127,19 @@ class Arm:
 
     def get_joint_angles(self):
         with self._status_lock:
-            res = self.qs.copy()
-        return res
+            return self.qs.copy()
 
     def get_joint_torques(self):
         with self._status_lock:
-            res = self.taus.copy()
-        return res
+            return self.taus.copy()
 
     def get_joint_state(self):
         res = (self.get_joint_angles(), self.get_joint_torques())
         return res
+
+    def get_joint_targets(self):
+        with self._status_lock:
+            return self.qs_target.copy()
 
     def set_joint_targets(self):
         """
@@ -144,10 +147,50 @@ class Arm:
         """
         pass
 
-    def set_gripper(self, pos):
+    def set_gripper(self, percent):
         """
-        Overridden by child classes as I still don't understand why _set_gripper is necessary in vrep
+        Set gripper from open 0, to closed 1
         """
+
+    def close_gripper(self, timeout=1) -> bool:
+        """
+        Close gripper
+        args:
+            timeout: time to wait for gripper to close
+        returns:
+            True if gripper closed within timeout
+            False if gripper not closed within timeout
+        """
+        self.set_gripper(1)
+
+        # Wait for gripper to close
+        timeout = time() + timeout
+        while 1 - self.get_joint_angles()[4] > 0.01:
+            sleep(0.1)
+            if time() > timeout:
+                return False
+
+        return True
+
+    def open_gripper(self, timeout=1) -> bool:
+        """
+        Open gripper
+        args:
+            timeout: time to wait for gripper to open
+        returns:
+            True if gripper opened within timeout
+            False if gripper not opened within timeout
+        """
+        self.set_gripper(0)
+
+        # Wait for gripper to open
+        timeout = time() + timeout
+        while self.get_joint_angles()[4] > 0.01:
+            sleep(0.1)
+            if time() > timeout:
+                return False
+
+        return True
 
     def set_joints_enabled(self, is_enabled):
         """
@@ -203,13 +246,25 @@ class Arm:
 
         return qs, taus, ts
 
-    def replay_trajectory(self, qs, ts=None, freq=20):
+    def replay_trajectory(self, qs, ts=None, freq=20, speed_factor=1):
+        """
+        Replay recorded trajectory
+        args:
+            qs: array of joint angles
+            ts: array of timestamps
+            freq: playback frequency (Optional) used if ts is None
+            speed_factor: scaling factor to divide ts by in order to speed up playback
+        """
         # Set initial position and wait
         self.set_joint_targets(qs[0])
-        sleep(0.5)
+        self.wait_joint_target_arrival()
+        ts = ts / speed_factor
         ts_start = time()
 
-        for t in range(1, qs.shape[0]):
+        # Index starts from 1 to allow ts difference calc
+        # Ends two from the end to allow any speed_factor while waiting
+        # for final position before opening/closing gripper
+        for t in range(1, qs.shape[0] - 2):
             self.set_joint_targets(qs[t])
             sleep_time = 0
             ts_now = time()
@@ -223,6 +278,9 @@ class Arm:
 
             if sleep_time > 0:
                 sleep(sleep_time)
+        self.set_joint_targets(qs[-2])
+        self.wait_joint_target_arrival()
+        self.set_joint_targets(qs[-1])
 
     def go_home(self):
         self.set_joint_targets(self.q_home)
@@ -342,9 +400,9 @@ class Arm:
     def cleanup(self):
         pass
 
-    def wait_target_arrival(self, max_distance=0.02, timeout=10, polling_interval=0.1):
+    def wait_joint_target_arrival(self, max_distance=0.5, timeout=10, polling_interval=0.1):
         """
-        Wait until the gripper position is within the target range or timeout.
+        Wait until actual joint angles are within the target range or timeout.
         Parameters:
         - max_distance: float, maximum allowable distance to the target.
         - timeout: float, maximum time to wait in seconds.
@@ -352,21 +410,22 @@ class Arm:
         Returns:
         - bool: True if the target was reached, False if timed out.
         """
+
         t_start = time()
         while True:
-            pos = self.get_gripper_pos()
-            target = self.get_gripper_target()
-            if np.linalg.norm(pos - target) <= max_distance:
+            qs = self.get_joint_angles()
+            qs_target = self.get_joint_targets()
+            if np.linalg.norm(qs - qs_target) <= max_distance:
                 return True
             if time() - t_start > timeout:
                 return False
             sleep(polling_interval)
 
-    def pickup(self):
-        self.replay_trajectory(pickup_trajectory)
+    def pickup(self, speed_factor=20):
+        self.replay_trajectory(pickup_trajectory.qs, pickup_trajectory.ts, speed_factor=speed_factor)
 
-    def toss(self):
-        self.replay_trajectory(toss_trajectory)
+    def toss(self, speed_factor=20):
+        self.replay_trajectory(toss_trajectory.qs, toss_trajectory.ts, speed_factor=speed_factor)
 
 
 class Trajectory:
@@ -422,36 +481,6 @@ def load_default_trajectories():
     toss_path = asset_path / 'toss.npz'
     pickup_trajectory = Trajectory.from_file(pickup_path)
     toss_trajectory = Trajectory.from_file(toss_path)
-
-
-def replay_trajectory(self,
-                      qs: np.ndarray,
-                      ts: np.ndarray = None,
-                      timestep_length: float = 0.01):
-    """
-    Replay a trajectory.
-
-    Parameters:
-    - qs: numpy.ndarray, shape (n, m), where n is the number of time steps and m is the number of joints.
-    - ts: numpy.ndarray, shape (n,), optional, timestamps for each time step.
-    - timestep_length: float, optional, length of each time step in seconds. Will default to 0.01 if ts is not provided.
-    """
-
-    # Set initial position as initial timestamp should be around 0
-    self.set_joint_targets(qs[0])
-    self.wait_target_arrival()
-    sleep_time = 0
-
-    if ts is None:
-        for t in range(1, qs.shape[0]):
-            self.set_joint_targets(qs[t])
-            sleep_time = timestep_length
-            sleep(sleep_time)
-    else:
-        for t in range(1, qs.shape[0]):
-            self.set_joint_targets(qs[t])
-            sleep_time = ts[t] - ts[t-1]
-            sleep(sleep_time)
 
 
 pickup_trajectory: Trajectory = None
