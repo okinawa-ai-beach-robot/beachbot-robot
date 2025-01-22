@@ -7,14 +7,13 @@ import time
 import json
 from scipy import signal
 import serial
+from threading import Thread
 
 
 class RoArmM1(Arm):
     def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=None) -> None:
         # Init superclass thread
         super().__init__(gripper_limits)
-        # do not block on exit:
-        self.daemon = True
         self.interval = 1.0 / rate_hz
         self.is_connected = False
         self.device = None
@@ -35,7 +34,7 @@ class RoArmM1(Arm):
         self._joint_targets = None
 
         if self.is_connected:
-            super().start()
+            self.thread = Thread(target=self.run, daemon=True).start()
 
     def run(self):
         while self.is_connected:
