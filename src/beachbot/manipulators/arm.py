@@ -166,12 +166,12 @@ class Arm:
         self, resample_steps=-1, wait_time_max=10, max_record_steps=250, save_path=None
     ):
         self.set_joints_enabled(False)
-        time.sleep(0.5)
+        sleep(0.5)
         q, tau = self.get_joint_state()
         qs = [q]
         taus = [tau]
         ts = [0]
-        ts_start = time.time()
+        ts_start = time()
 
         rec_steps = 0
         while self.wait_for_movement(wait_time_max) and rec_steps <= max_record_steps:
@@ -179,7 +179,7 @@ class Arm:
             q, tau = self.get_joint_state()
             qs.append(q)
             taus.append(tau)
-            ts.append(time.time() - ts_start)
+            ts.append(time() - ts_start)
             rec_steps += 1
 
         qs = np.stack(qs)
@@ -205,15 +205,15 @@ class Arm:
 
     def replay_trajectory(self, qs, ts=None, freq=20, gripper_overwrite=None):
         self.set_joints_enabled(True)
-        time.sleep(0.5)
-        ts_start = time.time()
+        sleep(0.5)
+        ts_start = time()
 
         for t in range(qs.shape[0]):
             if gripper_overwrite is not None:
                 qs[t][-1]=gripper_overwrite
             self.set_joint_targets(qs[t])
             wtime = 0
-            ts_now = time.time()
+            ts_now = time()
             if ts is None:
                 # fixed replay frequency
                 wtime = (1.0 / freq) - (ts_now - ts_start)
@@ -223,11 +223,11 @@ class Arm:
                 wtime = ts[t] - (ts_now - ts_start)
 
             if wtime > 0:
-                time.sleep(wtime)
+                sleep(wtime)
 
     def go_home(self):
         self.set_joint_targets(self.q_home)
-        time.sleep(1)
+        sleep(1)
 
     def is_ready(self):
         """Robot arm connected and ready for operation"""
