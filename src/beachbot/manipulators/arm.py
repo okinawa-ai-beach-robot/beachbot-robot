@@ -203,27 +203,27 @@ class Arm:
 
         return qs, taus, ts
 
-    def replay_trajectory(self, qs, ts=None, freq=20, gripper_overwrite=None):
+    def replay_trajectory(self, qs, ts=None, freq=20):
         self.set_joints_enabled(True)
+        # Set initial position and wait
+        self.set_joint_targets(qs[0])
         sleep(0.5)
         ts_start = time()
 
-        for t in range(qs.shape[0]):
-            if gripper_overwrite is not None:
-                qs[t][-1]=gripper_overwrite
+        for t in range(1, qs.shape[0]):
             self.set_joint_targets(qs[t])
-            wtime = 0
+            sleep_time = 0
             ts_now = time()
             if ts is None:
                 # fixed replay frequency
-                wtime = (1.0 / freq) - (ts_now - ts_start)
+                sleep_time = (1.0 / freq) - (ts_now - ts_start)
                 ts_start = ts_now
             else:
                 # wait for timestamp
-                wtime = ts[t] - (ts_now - ts_start)
+                sleep_time = ts[t] - ts[t - 1]
 
-            if wtime > 0:
-                sleep(wtime)
+            if sleep_time > 0:
+                sleep(sleep_time)
 
     def go_home(self):
         self.set_joint_targets(self.q_home)
