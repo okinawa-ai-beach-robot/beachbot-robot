@@ -31,10 +31,6 @@ class VrepRobotSimV1(RobotInterface):
 
         # Camera Setup:
         self.cameradevices[RobotInterface.CAMERATYPE.FRONT] = VrepCameraSim(self._vrep_sim, "cam_front")
-        try:
-            self.cameradevices[RobotInterface.CAMERATYPE.GRIPPER] = VrepCameraSim(self._vrep_sim, "cam_gripper")
-        except:
-            pass
 
         # Motor Controller Setup:
         motor_left = VrepMotorSim(self._vrep_sim, "motor_left")
