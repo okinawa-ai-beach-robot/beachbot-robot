@@ -1,13 +1,9 @@
 import math
-import numpy as np
-from beachbot.config import config
 from beachbot.manipulators.arm import Arm
-import threading
 import time
-import json
-from scipy import signal
 import serial
 from threading import Thread
+import json
 
 
 class RoArmM1(Arm):
@@ -27,11 +23,6 @@ class RoArmM1(Arm):
                 self.is_connected = self.device.isOpen()
             except Exception as e:
                 print("error open serial port: " + str(e))
-
-        self._write_lock = threading.Lock()
-        self._status_lock = threading.Lock()
-        self._joint_changed = threading.Condition()
-        self._joint_targets = None
 
         if self.is_connected:
             self.thread = Thread(target=self.run, daemon=True).start()
@@ -109,6 +100,7 @@ class RoArmM1(Arm):
             raise ValueError("joint number range is 1 to 5 and value range is percent x10 (0-1000)")
 
     def set_joint_targets(self, qs):
+        self.qs_target = qs
         # TODO add simple bounds/in-range check!
         data = json.dumps(
             {
@@ -148,7 +140,6 @@ class RoArmM1(Arm):
             self.write_io('{"T":9,"P1":8}\n')
         else:
             self.write_io('{"T":9,"P1":7}\n')
-
 
 class RoArmM1_Custom3FingerGripper(RoArmM1):
     def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=[42,60]):

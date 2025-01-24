@@ -33,11 +33,10 @@ def pickup(trajectory_file, pathpospercent):
         taus.append(tau)
         pathpospercent += i
         simarm.set_target_path_pos(percent=pathpospercent)
-        simarm.wait_target_arrival()
+        simarm.wait_target_pos_arrival()
 
     # Ensure the gripper matches the target state
-    q[4] = 1
-    simarm.set_joint_targets(q)
+    simarm.close_gripper()
 
     # Record final state
     current_time = time.time()
@@ -65,11 +64,10 @@ def toss(trajectory_file, pathpospercent):
         taus.append(tau)
         pathpospercent += i
         simarm.set_target_path_pos(percent=pathpospercent, offset=[0, 0, 0])
-        simarm.wait_target_arrival()
+        simarm.wait_target_pos_arrival()
 
     # Ensure the gripper matches the target state
-    q[4] = 0
-    simarm.set_joint_targets(q)
+    simarm.open_gripper()
 
     # Record final state
     current_time = time.time()
@@ -82,8 +80,9 @@ def toss(trajectory_file, pathpospercent):
 
 increment = 0.01
 pathpospercent = 0.25
+simarm.open_gripper()
 simarm.set_target_path_pos(pathpospercent)
-simarm.wait_target_arrival()
+simarm.wait_target_pos_arrival()
 assets_path = "src/beachbot/assets/"
 pickup_path = assets_path + "pickup.npz"
 toss_path = assets_path + "toss.npz"

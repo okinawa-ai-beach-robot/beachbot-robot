@@ -2,9 +2,7 @@ import os
 import math
 import numpy as np
 from beachbot.utils.vrepsimulation import vrep
-from beachbot.config import config
-import time
-from scipy import signal
+from time import sleep, time
 from beachbot.manipulators.arm import Arm
 
 
@@ -93,8 +91,8 @@ class VrepRoArmM1Sim(Arm):
         q,t = self.vrep_sim.callScriptFunction("get_gripper_percent",self.vrep_robot_script)
         return q,t
 
-    def _set_gripper(self, val_percent):
-        self.vrep_sim.callScriptFunction("set_gripper_percent",self.vrep_robot_script, val_percent)
+    def _set_gripper(self, percent):
+        self.vrep_sim.callScriptFunction("set_gripper_percent",self.vrep_robot_script, percent)
 
     @vrep
     def get_joint_angles(self, do_offsetcompensation=True):
@@ -115,6 +113,7 @@ class VrepRoArmM1Sim(Arm):
 
     @vrep
     def set_joint_targets(self, qs, do_offsetcompensation=True):
+        self.qs_target = qs
         for i in range(4):
             if do_offsetcompensation:
                 qt = self.q_zero[i] + self.q_zero_fac[i]*qs[i]
@@ -125,8 +124,13 @@ class VrepRoArmM1Sim(Arm):
             self._set_gripper(qs[4])
 
     @vrep
-    def set_gripper(self, pos):
-        self._set_gripper(pos)
+    def set_gripper(self, percent: float):
+        """
+        Set gripper from open 0, to closed 1
+        """
+        if percent < 0 or percent > 1:
+            raise ValueError("Percent must be between 0 and 1")
+        self._set_gripper(percent)
 
     @vrep
     def set_joints_enabled(self, is_enabled):
@@ -138,10 +142,10 @@ class VrepRoArmM1Sim(Arm):
 
     def wait_for_movement(self, timeout=None):
         qs_old = self.get_joint_angles()
-        t_start = time.time()
+        t_start = time()
         t_now=t_start
         while timeout==None or t_now-t_start<timeout:
-            time.sleep(0.1)
+            sleep(0.1)
             qs_new = self.get_joint_angles()
             qs_changed = any(
                     [math.fabs(a - b) > 0.1 for a, b in zip(qs_old, qs_new)]
@@ -149,6 +153,27 @@ class VrepRoArmM1Sim(Arm):
             if qs_changed:
                 return True
         return False
+
+    def wait_target_pos_arrival(self, max_distance=0.02, timeout=10, polling_interval=0.1):
+        """
+        Wait until the gripper position is within the target range or timeout.
+        This uses 3d coordinates from CoppeliaSim so specific to the simulation
+        Parameters:
+        - max_distance: float, maximum allowable distance to the target.
+        - timeout: float, maximum time to wait in seconds.
+        - polling_interval: float, time between position checks.
+        Returns:
+        - bool: True if the target was reached, False if timed out.
+        """
+        t_start = time()
+        while True:
+            pos = self.get_gripper_pos()
+            target = self.get_gripper_target()
+            if np.linalg.norm(pos - target) <= max_distance:
+                return True
+            if time() - t_start > timeout:
+                return False
+            sleep(polling_interval)
 
     @vrep
     def get_gripper_pos(self):
@@ -173,12 +198,12 @@ class VrepRoArmM1Sim(Arm):
 
     def go_zero(self):
         self.set_joint_targets([0,0,0,0]+[self.q_zero[-1]])
-        time.sleep(1)
+        sleep(1)
 
     def go_calib(self):
         #self.set_joint_targets(self.q_zero)
         self.set_joint_targets([180,75, 0, 0]+[self.q_zero[-1]])
-        time.sleep(1)
+        sleep(1)
 
     def test_movement(self):
         pathfile = os.path.dirname(__file__)
@@ -203,16 +228,16 @@ class VrepRoArmM1Sim(Arm):
         #self.refresh_robot_state()
         #self.go_home()
         self.replay_trajectory(qs_grab, ts_grab)
-        time.sleep(1)
+        sleep(1)
         # close gripper
         #self.set_gripper(0.8)
-        #time.sleep(1)
+        #sleep(1)
         # self.replay_trajectory(qs_toss, ts_toss)
-        # time.sleep(1)
+        # sleep(1)
 
         # open gripper
         #self.set_gripper(0.0)
-        #time.sleep(1)
+        #sleep(1)
         #self.go_home()
         print("Done!")
 
