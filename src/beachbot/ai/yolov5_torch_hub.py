@@ -84,9 +84,9 @@ try:
             self.net.conf = confidence_threshold  # NMS confidence threshold
             row, col, _ = inputs.shape
             with torch.no_grad():
-                results = self.net([inputs], size=row)
+                results = self.net([inputs[..., ::-1]], size=row) # detect on BGR->RGB pixel format
 
-            res = results.xyxy[0]
+            res = results.xyxy[0].numpy(force=True)
             result_class_ids = []
             result_confidences = []
             result_boxes = []
@@ -98,24 +98,28 @@ try:
                 top = res[i, 1]
                 width = res[i, 2] - res[i, 0]
                 height = res[i, 3] - res[i, 1]
+                print(res[i,:])
                 if units_percent:
-                    left /= self.img_width
-                    top /= self.img_height
-                    width /= self.img_width
-                    height /= self.img_height
+                    # do not use model format, we use resolution of current input...
+                    # Pytorch performs probably fome fance rescaling of the image (to fit the yolo resolution) under the hood
+                    # left /= self.img_width
+                    # top /= self.img_height
+                    # width /= self.img_width
+                    # height /= self.img_height
                     if units_percent:
-                        # percent estimate, relative to image size
+                        # percent estimate, relative to image (input!) size
                         left /= inputs.shape[1]
                         top /= inputs.shape[0]
                         width /= inputs.shape[1]
                         height /= inputs.shape[0]
                     else:
-                        # pixel coordinates, rond float estimates
+                        # pixel coordinates, round float estimates
                         left = round(left)
                         top = round(top)
                         width = round(width)
                         height = round(height)
                 bbox = np.array([left, top, width, height])
+                print("addbox", bbox)
                 result_boxes.append(bbox)
 
             return result_class_ids, result_confidences, result_boxes
