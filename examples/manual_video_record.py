@@ -1,17 +1,24 @@
 import beachbot
 import time
 
+from beachbot.utils.imageviewermatplotlib import ImageViewerMatplotlib
+from beachbot.sensors.jetsoncsicameraopencv import JetsonCsiCameraOpenCV as cameradevice
+from beachbot.sensors.usbcameraopencv import UsbCameraOpenCV
+
+from beachbot.utils.videowriteropencv import VideoWriterOpenCV as videodevice
+
+
 
 # A reference to a image viewer can be used to display images:
-viewer = beachbot.utils.ImageViewerMatplotlib
+viewer = ImageViewerMatplotlib
 
 
 # There are two possible backend to read images from the camera devices
-cam1 = beachbot.sensors.UsbCameraOpenCV(width=640, height=480, fps=30, dev_id=0)
-#cam1 = beachbot.sensors.JetsonCsiCameraOpenCV()
+#cam1 = beachbot.sensors.UsbCameraOpenCV(width=640, height=480, fps=30, dev_id=0)
+cam1 = cameradevice()
 #cam1 = beachbot.sensors.JetsonGstCameraNative()
 
-if isinstance(cam1, beachbot.sensors.UsbCameraOpenCV):
+if isinstance(cam1, UsbCameraOpenCV):
     # just for fun: print list of video devices and current resolution to console:
     cam1.list_cameras()
 
@@ -20,7 +27,7 @@ if isinstance(cam1, beachbot.sensors.UsbCameraOpenCV):
 capture_width, capture_height = cam1.get_size()
 
 # Create video file writer, for now only one backend is implemented (opencv):
-videowriter = beachbot.utils.VideoWriterOpenCV("filename_tmp.mp4", fps=10, capture_width=capture_width, capture_height=capture_height )
+videowriter = videodevice("filename_tmp.mp4", fps=10, capture_width=capture_width, capture_height=capture_height )
 
 
 print("My resolution is:", cam1.get_size())
