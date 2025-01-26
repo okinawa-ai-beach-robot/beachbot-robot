@@ -5,6 +5,7 @@ import serial
 from threading import Thread
 import json
 
+from beachbot.config import logger
 
 class RoArmM1(Arm):
     def __init__(
@@ -38,16 +39,18 @@ class RoArmM1(Arm):
             if functime < self.interval:
                 time.sleep(self.interval - functime)
             else:
-                raise Exception(
-                    "Error: Out of time! ("
-                    + str(functime)
-                    + ","
-                    + str(self.interval)
-                    + ")"
-                )
+                logger.warn("Error [TODO: handle properly, for now wait 1 sec and try again...]: RoArmUpdate loop out of time! ("+ str(functime)+ ","+ str(self.interval)+ ")")
+                time.sleep(1.0)
+
+                # raise Exception(
+                #     "Error: Out of time! ("
+                #     + str(functime)
+                #     + ","
+                #     + str(self.interval)
+                #     + ")"
+                # )
 
     def write_io(self, data):
-        breakpoint()
         with self._write_lock:
             self.device.write(data.encode())
 
