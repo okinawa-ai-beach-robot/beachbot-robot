@@ -5,8 +5,9 @@ from ..utils.controllercollection import PIDController
 
 
 class ApproachDebris(RobotController):
-    def __init__(self):
+    def __init__(self, targetfilter=None):
         super().__init__()
+        self.targetfilter=targetfilter
 
         self.ctrl = PIDController(setpoint_x=0.5, setpoint_y=0.25, kp=0.1)
 
@@ -18,10 +19,11 @@ class ApproachDebris(RobotController):
     def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False):
         trash_to_follow : BoxDef = None
 
-        if len(detections)>0:
+        for detected in detections:
             # Detected trash
             # Todo select best trash in case multiple detections, for now, take first one:
-            trash_to_follow = detections[0]
+            if self.targetfilter is None or detected.class_name in self.targetfilter:
+                trash_to_follow = detected
 
         if trash_to_follow:
             # approach trash
