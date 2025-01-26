@@ -2,6 +2,7 @@
 
 ## Initial setup
 [It is recommended](https://realpython.com/python-virtual-environments-a-primer/#why-do-you-need-virtual-environments) to use virtual environments. Start by creating a virtual environment then installing the beachbot package without dependencies in edit mode (allows you to make use of any recent changes without reinstalling). This will avoid installing any conflicting packages with jetpack on the jetson or otherwise.
+[TODO: pip environment can not access the system-wide install of obencv with csi camera support, TODO there is an option like "use system packages" when creating a python env, then the newly created env should use system packages if they are not available in the pyenv. maybe works, too lazy to test for now TODO!]
 ```
 python3 -m venv .venv
 . .venv/bin/activate
