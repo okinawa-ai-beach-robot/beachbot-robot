@@ -4,6 +4,7 @@ import time
 import serial
 from threading import Thread
 import json
+import threading
 
 from beachbot.config import logger
 
@@ -16,6 +17,8 @@ class RoArmM1(Arm):
         self.interval = 1.0 / rate_hz
         self.is_connected = False
         self.device = None
+        self._write_lock = threading.Lock()
+
         if serial_port is not None:
             self.is_connected = False
             try:
@@ -52,7 +55,9 @@ class RoArmM1(Arm):
 
     def write_io(self, data):
         with self._write_lock:
+            print("in lock")
             self.device.write(data.encode())
+            print("returned!")
 
     def cleanup(self):
         self.close_io()
@@ -105,6 +110,15 @@ class RoArmM1(Arm):
             )
 
     def set_joint_targets(self, qs):
+        pos = qs[-1]
+        if pos < 0:
+            pos = 0
+        if pos > 1:
+            pos = 1
+        jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
+        qs[-1] = jpos
+
+
         self.qs_target = qs
         # TODO add simple bounds/in-range check!
         data = json.dumps(
@@ -127,17 +141,19 @@ class RoArmM1(Arm):
                 "A5": 60,
             }
         )
+        print("write:", data)
         self.write_io(data)
+        print("write done")
 
     def set_gripper(self, pos):
-        if pos < 0:
-            pos = 0
-        if pos > 1:
-            pos = 1
-        jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
+        # if pos < 0:
+        #     pos = 0
+        # if pos > 1:
+        #     pos = 1
+        # jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
         qt = self.get_joint_angles()
-        qt[-1] = jpos
-        print("set gripper", jpos)
+        qt[-1] = pos
+        # print("set gripper", jpos)
         self.set_joint_targets(qt)
 
     def set_joints_enabled(self, is_enabled):

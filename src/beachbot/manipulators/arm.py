@@ -58,7 +58,7 @@ class Arm:
         self.qs = self.q_home
         self.qs_target = None
 
-        self._write_lock = threading.Lock()
+        
         self._status_lock = threading.Lock()
         self._joint_changed = threading.Condition()
 
