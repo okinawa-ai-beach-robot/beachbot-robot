@@ -7,7 +7,9 @@ import json
 
 
 class RoArmM1(Arm):
-    def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=None) -> None:
+    def __init__(
+        self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=None
+    ) -> None:
         # Init superclass thread
         super().__init__(gripper_limits)
         self.interval = 1.0 / rate_hz
@@ -45,6 +47,7 @@ class RoArmM1(Arm):
                 )
 
     def write_io(self, data):
+        breakpoint()
         with self._write_lock:
             self.device.write(data.encode())
 
@@ -63,7 +66,7 @@ class RoArmM1(Arm):
             if not strdata.startswith(b"{"):
                 # Ignore information messages
                 # Only interpred json data {....}
-                print("msg:", strdata.decode())
+                # print("msg:", strdata.decode())
                 continue
             try:
                 data = json.loads(strdata)
@@ -72,7 +75,9 @@ class RoArmM1(Arm):
                     qs = [float(data.get("A" + str(num + 1), 0)) for num in range(5)]
                     taus = [float(data.get("T" + str(num + 1), 0)) for num in range(5)]
                     # Convert gripper joint angle into range 0..1
-                    qs[4] = (qs[4] - self.gripper_open) / (self.gripper_close - self.gripper_open)
+                    qs[4] = (qs[4] - self.gripper_open) / (
+                        self.gripper_close - self.gripper_open
+                    )
                     qs_changed = any(
                         [math.fabs(a - b) > 0.1 for a, b in zip(qs, self.qs)]
                     )
@@ -88,16 +93,13 @@ class RoArmM1(Arm):
                 self.close_io()
 
     def set_max_torque(self, jointnr, maxvalue):
-        if jointnr>0 and jointnr<6 and maxvalue>=0 and maxvalue<=1000:
-            data = json.dumps(
-                {
-                    "T": 100,
-                    f"Q{jointnr}": maxvalue
-                }
-            )
+        if jointnr > 0 and jointnr < 6 and maxvalue >= 0 and maxvalue <= 1000:
+            data = json.dumps({"T": 100, f"Q{jointnr}": maxvalue})
             self.write_io(data)
         else:
-            raise ValueError("joint number range is 1 to 5 and value range is percent x10 (0-1000)")
+            raise ValueError(
+                "joint number range is 1 to 5 and value range is percent x10 (0-1000)"
+            )
 
     def set_joint_targets(self, qs):
         self.qs_target = qs
@@ -141,6 +143,7 @@ class RoArmM1(Arm):
         else:
             self.write_io('{"T":9,"P1":7}\n')
 
+
 class RoArmM1_Custom3FingerGripper(RoArmM1):
-    def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=[42,60]):
+    def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=[42, 60]):
         super().__init__(rate_hz, serial_port, gripper_limits)
