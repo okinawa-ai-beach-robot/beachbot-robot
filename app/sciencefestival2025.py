@@ -281,7 +281,7 @@ with tab_panel:
             ).on_value_change(lambda v: toggle_recoding(v.value == 2))
             with ui.column():
                 with ui.row().classes("w-full"):
-                    do_detect = ui.switch('Blob Detection', on_change=lambda x: toggle_detection(x.value))
+                    do_detect = ui.switch('Object Detection', on_change=lambda x: toggle_detection(x.value))
                     ui.space()
                     do_control = ui.switch('Robot Control', on_change=lambda x: toggle_control(x.value))
                 
