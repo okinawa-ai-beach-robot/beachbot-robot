@@ -26,7 +26,9 @@ class RoArmM1(Arm):
                     serial_port, timeout=0, baudrate=115200
                 )  # open serial port
                 # self.device.open()
+                self.write_dspl("Beachbot", "Python connected!")
                 self.is_connected = self.device.isOpen()
+
             except Exception as e:
                 print("error open serial port: " + str(e))
 
@@ -55,9 +57,19 @@ class RoArmM1(Arm):
 
     def write_io(self, data):
         with self._write_lock:
-            print("in lock")
             self.device.write(data.encode())
-            print("returned!")
+            self.device.flush()
+
+    def write_dspl(self, line1=None, line2=None, line3=None, line4=None):   
+        jsondata = {
+                "T": 103
+            }
+        if line1: jsondata["L1"]=line1
+        if line2: jsondata["L2"]=line2
+        if line3: jsondata["L3"]=line3
+        if line4: jsondata["L4"]=line4
+        txdata = json.dumps(jsondata)
+        self.write_io(txdata)
 
     def cleanup(self):
         self.close_io()
@@ -69,12 +81,12 @@ class RoArmM1(Arm):
 
     def refresh_robot_state(self):
         # request arm state
-        self.write_io('{"T":5}\n')
+        self.write_io('{"T":5}')
         for strdata in self.device.readlines():
             if not strdata.startswith(b"{"):
                 # Ignore information messages
                 # Only interpred json data {....}
-                # print("msg:", strdata.decode())
+                print("Debug message from servo board:", strdata.decode())
                 continue
             try:
                 data = json.loads(strdata)
@@ -95,6 +107,12 @@ class RoArmM1(Arm):
                     if qs_changed:
                         with self._joint_changed:
                             self._joint_changed.notify_all()
+                else:
+                    # response from command!
+                    # print("response from servoboard:", data.decode())
+                    # One can do something, check fi command was successful or so ... 
+                    pass
+
             except Exception as ex:
                 print("Read error:" + strdata.decode())
                 print("Exception:", ex)
@@ -141,9 +159,7 @@ class RoArmM1(Arm):
                 "A5": 60,
             }
         )
-        print("write:", data)
         self.write_io(data)
-        print("write done")
 
     def set_gripper(self, pos):
         # if pos < 0:
