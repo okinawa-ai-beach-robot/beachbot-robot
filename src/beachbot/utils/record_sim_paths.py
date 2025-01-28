@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
+from beachbot.manipulators.arm import normalize_gripper_angle
 from pathlib import Path
 
 robot = VrepRobotSimV1(scene="roarm_m1_recorder_3finger.ttt")

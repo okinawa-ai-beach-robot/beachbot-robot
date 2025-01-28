@@ -94,10 +94,7 @@ class RoArmM1(Arm):
                     # robot status package recieved:
                     qs = [float(data.get("A" + str(num + 1), 0)) for num in range(5)]
                     taus = [float(data.get("T" + str(num + 1), 0)) for num in range(5)]
-                    # Convert gripper joint angle into range 0..1
-                    qs[4] = (qs[4] - self.gripper_open) / (
-                        self.gripper_close - self.gripper_open
-                    )
+                    qs[4] = self.normalize_gripper_angles(qs[4])
                     qs_changed = any(
                         [math.fabs(a - b) > 0.1 for a, b in zip(qs, self.qs)]
                     )
@@ -128,16 +125,8 @@ class RoArmM1(Arm):
             )
 
     def set_joint_targets(self, qs):
-        pos = qs[-1]
-        if pos < 0:
-            pos = 0
-        if pos > 1:
-            pos = 1
-        jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
-        qs[-1] = jpos
-
-
         self.qs_target = qs
+        qs[4] = self.denormalize_gripper_angles(qs[4])
         # TODO add simple bounds/in-range check!
         data = json.dumps(
             {

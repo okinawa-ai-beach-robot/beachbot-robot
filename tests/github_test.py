@@ -1,5 +1,5 @@
 from beachbot.config import config
-from beachbot.utils.github import download
+from beachbot.utils.github_api import download
 
 
 def test_github_download():

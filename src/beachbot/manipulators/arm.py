@@ -151,6 +151,26 @@ class Arm:
         """
         pass
 
+    def normalize_gripper_angle(self, angle):
+        """
+        Convert from physical gripper angles to normalized values [0..1].
+        Gripper interface to accept values [0..1], but actual serial interface to
+        servos accepts actual angle values. We limit these values to between
+        gripper_open and gripper_close.
+        """
+        return (angle - self.gripper_open) / (self.gripper_close - self.gripper_open)
+
+    def denormalize_gripper_angle(self, percentage):
+        """
+        Convert from normalized values [0..1] to physical gripper angles.
+        Gripper interface to accept values [0..1], but actual serial interface to
+        servos accepts actual angle values. We limit these values to between
+        gripper_open and gripper_close.
+        """
+        if percentage < 0 or percentage > 1:
+            raise ValueError("Angle must be between 0 and 1")
+        return self.gripper_open + (self.gripper_close - self.gripper_open) * percentage
+
     def set_gripper(self, percent):
         """
         Set gripper from open 0, to closed 1
