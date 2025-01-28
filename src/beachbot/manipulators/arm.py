@@ -62,6 +62,12 @@ class Arm:
         self._status_lock = threading.Lock()
         self._joint_changed = threading.Condition()
 
+        asset_path = Path(__file__).parent.parent / "assets"
+        pickup_path = asset_path / "pickup.npz"
+        toss_path = asset_path / "toss.npz"
+        self.pickup_trajectory = Trajectory.from_file(pickup_path)
+        self.toss_trajectory = Trajectory.from_file(toss_path)
+
     def fkin(self, qs):
         """
         x,y,z = fkin([angle_1, angle_2, angle_3, angle_4])
@@ -453,12 +459,12 @@ class Arm:
 
     def pickup(self, speed_factor=20):
         self.replay_trajectory(
-            pickup_trajectory.qs, pickup_trajectory.ts, speed_factor=speed_factor
+            self.pickup_trajectory.qs, self.pickup_trajectory.ts, speed_factor=speed_factor
         )
 
     def toss(self, speed_factor=20):
         self.replay_trajectory(
-            toss_trajectory.qs, toss_trajectory.ts, speed_factor=speed_factor
+            self.toss_trajectory.qs, self.toss_trajectory.ts, speed_factor=speed_factor
         )
 
 
@@ -498,25 +504,3 @@ def translate(point, offset):
     Translate point by offset.
     """
     return point[0] + offset[0], point[1] + offset[1]
-
-
-def load_trajectory(trajectory_path: Path):
-    data = np.load(str(trajectory_path))
-    ts = data["ts"]
-    qs = data["qs"]
-    taus = data["taus"]
-    return ts, qs, taus
-
-
-def load_default_trajectories():
-    global pickup_trajectory, toss_trajectory
-    asset_path = Path(__file__).parent.parent / "assets"
-    pickup_path = asset_path / "pickup.npz"
-    toss_path = asset_path / "toss.npz"
-    pickup_trajectory = Trajectory.from_file(pickup_path)
-    toss_trajectory = Trajectory.from_file(toss_path)
-
-
-pickup_trajectory: Trajectory = None
-toss_trajectory: Trajectory = None
-load_default_trajectories()
