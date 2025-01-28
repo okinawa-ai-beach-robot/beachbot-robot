@@ -31,6 +31,7 @@ class RoArmM1(Arm):
 
             except Exception as e:
                 print("error open serial port: " + str(e))
+                raise e
 
         if self.is_connected:
             self.thread = Thread(target=self.run, daemon=True).start()
@@ -44,16 +45,13 @@ class RoArmM1(Arm):
             if functime < self.interval:
                 time.sleep(self.interval - functime)
             else:
-                logger.warn("Error [TODO: handle properly, for now wait 1 sec and try again...]: RoArmUpdate loop out of time! ("+ str(functime)+ ","+ str(self.interval)+ ")")
-                time.sleep(1.0)
-
-                # raise Exception(
-                #     "Error: Out of time! ("
-                #     + str(functime)
-                #     + ","
-                #     + str(self.interval)
-                #     + ")"
-                # )
+                raise Exception(
+                    "Error: Out of time! ("
+                    + str(functime)
+                    + ","
+                    + str(self.interval)
+                    + ")"
+                )
 
     def write_io(self, data):
         with self._write_lock:
