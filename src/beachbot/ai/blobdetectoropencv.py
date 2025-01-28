@@ -9,7 +9,7 @@ class BlobDetectorOpenCV(DebrisDetector):
     BlobDetectorOpenCV implementation of simple blob detector.
     """
 
-    def __init__(self, model_file=None, use_accel=True, minArea = 10, maxArea = 200000) -> None:
+    def __init__(self, model_file=None, use_accel=True, minArea = 1000, maxArea = 200000) -> None:
         params = cv2.SimpleBlobDetector_Params()
         params.filterByCircularity = False
         params.filterByConvexity = False

@@ -1,6 +1,7 @@
 from beachbot.config import logger
 from .debrisdetector import DebrisDetector
 from .yolov5_detector import Yolo5Detector
+from beachbot.config import config
 import torch
 import numpy as np
 
@@ -16,8 +17,10 @@ try:
         Official YOLOv5 implementation based on Pytorch and torch Hub.\n
         """
 
-        def __init__(self, model_file, use_accel=True) -> None:
+        def __init__(self, model_file=None, use_accel=True) -> None:
             super().__init__(None)
+            if model_file is None:
+                model_file = str(config.BEACHBOT_MODELS) + "/Original_YOLOv5s/"
             if "." in model_file:
                 model_folder = os.path.dirname(os.path.realpath(model_file))
             else:
@@ -98,7 +101,6 @@ try:
                 top = res[i, 1]
                 width = res[i, 2] - res[i, 0]
                 height = res[i, 3] - res[i, 1]
-                print(res[i,:])
                 if units_percent:
                     # do not use model format, we use resolution of current input...
                     # Pytorch performs probably fome fance rescaling of the image (to fit the yolo resolution) under the hood
@@ -119,7 +121,6 @@ try:
                         width = round(width)
                         height = round(height)
                 bbox = np.array([left, top, width, height])
-                print("addbox", bbox)
                 result_boxes.append(bbox)
 
             return result_class_ids, result_confidences, result_boxes

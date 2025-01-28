@@ -35,13 +35,14 @@ class VideoWriterOpenCV(threading.Thread):
         self.vidfile = cv2.VideoWriter(
             filename, fourcc, fps, (capture_width, capture_height)
         )
+        self.filename = filename
         self._fps = fps
         self._videosource = None
         self._stopped = True
 
     @staticmethod
     def get_base_path():
-        basepath = str(config.BEACHBOT_HOME) + os.path.sep + "Recordings" + os.path.sep
+        basepath = str(config.BEACHBOT_RECORDINGS) + os.path.sep
         os.makedirs(basepath, exist_ok=True)
         return basepath
 
