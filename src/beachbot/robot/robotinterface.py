@@ -1,6 +1,6 @@
 from enum import Enum
 import time
-from typing import Any, Union
+from typing import Any, Union, List
 import numpy as np
 import threading
 from beachbot.config import logger
@@ -127,7 +127,7 @@ class RobotInterface(object):
         ending_thread.join()
 
     
-    def get_buffered_camera_image(self, which:CAMERATYPE=CAMERATYPE.FRONT) -> Union[Any, Union[list[BoxDef], None]] :
+    def get_buffered_camera_image(self, which:CAMERATYPE=CAMERATYPE.FRONT) -> Union[Any, Union[List[BoxDef], None]] :
         with self.buffered_camera_lock:
             if which in self.buffered_camera_image:
                 # return buffered image if available

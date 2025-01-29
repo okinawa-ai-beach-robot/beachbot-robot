@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import threading
-from typing import List, Union
+from typing import List, Union, Tuple
 
 
 @dataclass
@@ -52,13 +52,14 @@ class RobotController:
             if name not in self._properties:
                 return None
             return self._properties[name].value
-    def get_property_bounds(self, name:str) -> Union[tuple[Union[float,None], Union[float,None]], None]:
+        
+    def get_property_bounds(self, name:str) -> Union[Tuple[Union[float,None], Union[float,None]], None]:
         with self._properties_lock:
             if name not in self._properties:
                 return None
             return (self._properties[name].min, self._properties[name].max)
         
-    def list_property_names(self)->list[str]:
+    def list_property_names(self)->List[str]:
         with self._properties_lock:
             return list(self._properties.keys())
 
