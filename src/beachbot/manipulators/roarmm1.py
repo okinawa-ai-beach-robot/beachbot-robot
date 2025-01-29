@@ -126,10 +126,6 @@ class RoArmM1(Arm):
     def set_joint_targets(self, qs):
         self.qs_target = qs
         percent = self.denormalize_gripper_angle(qs[4])
-        print("Prior: pickup_trajectory.qs[0][4]", self.pickup_trajectory.qs[0][4])
-        qs[4] = percent
-        print("Post: pickup_trajectory.qs[0][4]", self.pickup_trajectory.qs[0][4])
-        breakpoint()
 
         # TODO add simple bounds/in-range check!
         data = json.dumps(
@@ -139,7 +135,7 @@ class RoArmM1(Arm):
                 "P2": qs[1],
                 "P3": qs[2],
                 "P4": qs[3],
-                "P5": jpos,
+                "P5": percent,
                 "S1": 400,
                 "S2": 1200,
                 "S3": 400,
