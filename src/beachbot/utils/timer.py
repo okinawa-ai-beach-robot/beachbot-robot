@@ -55,6 +55,9 @@ class Timer:
     def get_median(self):
         return self.median
     
+    def get_last_interval(self):
+        return self.interval
+    
 
     def __enter__(self):
         self.start = time.perf_counter()

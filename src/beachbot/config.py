@@ -16,6 +16,7 @@ default_paths = {
     "BEACHBOT_MODELS": Path(_platform_dirs.user_cache_dir) / "models",
     "BEACHBOT_DATASETS": Path(_platform_dirs.user_cache_dir) / "datasets",
     "BEACHBOT_SIMULATION": Path(_platform_dirs.user_cache_dir) / "simulations",
+    "BEACHBOT_RECORDINGS": Path(_platform_dirs.user_data_dir) / "recordings",
 }
 
 
@@ -28,6 +29,7 @@ class Config:
     BEACHBOT_MODELS = None
     BEACHBOT_DATASETS = None
     BEACHBOT_SIMULATION = None
+    BEACHBOT_RECORDINGS = None
 
     # Github Repos
     BEACHBOT_HARDWARE_REPO = "okinawa-ai-beach-robot/beach-cleaning-hardware"

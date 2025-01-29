@@ -1,9 +1,11 @@
-from ..sensors.jetsoncsicameraopencv import JetsonCsiCameraOpenCV
+from ..sensors.jetsoncsicameraopencv import JetsonCsiCameraOpenCV as CSICamera
+#from ..sensors.jetsongstcameranative import JetsonGstCameraNative as CSICamera
 from ..sensors.usbcameraopencv import UsbCameraOpenCV
 from ..manipulators.drive import DifferentialDrive
 from ..manipulators.jetsonmotor import JetsonMotor
 from ..manipulators.roarmm1 import RoArmM1_Custom3FingerGripper
 from .robotinterface import RobotInterface
+from beachbot.config import logger
 
 try:
     import Jetson.GPIO as GPIO
@@ -14,12 +16,12 @@ class JetsonRobotV1(RobotInterface):
     def __init__(self):
         super().__init__()
         # Camera Setup:
-        self.cameradevices[RobotInterface.CAMERATYPE.FRONT] = JetsonCsiCameraOpenCV()
+        self.cameradevices[RobotInterface.CAMERATYPE.FRONT] = CSICamera()
         try:
             usbcam = UsbCameraOpenCV()
             self.cameradevices[RobotInterface.CAMERATYPE.GRIPPER] = usbcam
         except Exception:
-            pass
+            logger.warning("Gripper camera not detected, RobotInterface.CAMERATYPE.GRIPPER not available!")
 
         # Motor Hardware Config:
         pwm_pins = [32, 33]

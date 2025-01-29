@@ -1,6 +1,7 @@
 from beachbot.config import logger
 from .debrisdetector import DebrisDetector
 from .yolov5_detector import Yolo5Detector
+from beachbot.config import config
 import torch
 import numpy as np
 
@@ -16,8 +17,10 @@ try:
         Official YOLOv5 implementation based on Pytorch and torch Hub.\n
         """
 
-        def __init__(self, model_file, use_accel=True) -> None:
+        def __init__(self, model_file=None, use_accel=True) -> None:
             super().__init__(None)
+            if model_file is None:
+                model_file = str(config.BEACHBOT_MODELS) + "/Original_YOLOv5s/"
             if "." in model_file:
                 model_folder = os.path.dirname(os.path.realpath(model_file))
             else:
@@ -84,9 +87,9 @@ try:
             self.net.conf = confidence_threshold  # NMS confidence threshold
             row, col, _ = inputs.shape
             with torch.no_grad():
-                results = self.net([inputs], size=row)
+                results = self.net([inputs[..., ::-1]], size=row) # detect on BGR->RGB pixel format
 
-            res = results.xyxy[0]
+            res = results.xyxy[0].numpy(force=True)
             result_class_ids = []
             result_confidences = []
             result_boxes = []
@@ -99,18 +102,20 @@ try:
                 width = res[i, 2] - res[i, 0]
                 height = res[i, 3] - res[i, 1]
                 if units_percent:
-                    left /= self.img_width
-                    top /= self.img_height
-                    width /= self.img_width
-                    height /= self.img_height
+                    # do not use model format, we use resolution of current input...
+                    # Pytorch performs probably fome fance rescaling of the image (to fit the yolo resolution) under the hood
+                    # left /= self.img_width
+                    # top /= self.img_height
+                    # width /= self.img_width
+                    # height /= self.img_height
                     if units_percent:
-                        # percent estimate, relative to image size
+                        # percent estimate, relative to image (input!) size
                         left /= inputs.shape[1]
                         top /= inputs.shape[0]
                         width /= inputs.shape[1]
                         height /= inputs.shape[0]
                     else:
-                        # pixel coordinates, rond float estimates
+                        # pixel coordinates, round float estimates
                         left = round(left)
                         top = round(top)
                         width = round(width)

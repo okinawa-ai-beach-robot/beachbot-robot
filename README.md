@@ -2,6 +2,7 @@
 
 ## Initial setup
 [It is recommended](https://realpython.com/python-virtual-environments-a-primer/#why-do-you-need-virtual-environments) to use virtual environments. Start by creating a virtual environment then installing the beachbot package without dependencies in edit mode (allows you to make use of any recent changes without reinstalling). This will avoid installing any conflicting packages with jetpack on the jetson or otherwise.
+[TODO: pip environment can not access the system-wide install of obencv with csi camera support, TODO there is an option like "use system packages" when creating a python env, then the newly created env should use system packages if they are not available in the pyenv. maybe works, too lazy to test for now TODO!]
 ```
 python3 -m venv .venv
 . .venv/bin/activate
@@ -40,8 +41,20 @@ sudo apt-get install ffmpeg x264 libx264-dev
 ## Troubleshooting
 Assuming you follow the guide above for installing on the Jetson, this should not be necessary, but in the event you see any errors, the information below may be of use:
 
-On jetson, python-opencv is installed by nvidia and could be hidden by the pip version.
-The pip-version does not support the jetson camera, thus, we have to uninstall all opencv pip versions from the jetson after reinstall of our package:
+We need opencv compiled with python and gstreamer support.
+opencv 4.2 (as provided by jetpack NVIDIA) is not supported by the pip ultralytics package (yolo),
+also the pip opencv version does not support gstreamer, so install from source is necessary.
+You can check this, e.g., by:
+```
+import cv2
+
+build_info = cv2.getBuildInformation()
+print("OpenCV build information:")
+print(build_info)
+```
+
+After installing our package, pip may installes pyopencv, and this overwrites out system wide install of opencv.
+As the pip-version does not support the jetson camera (gstreamer), thus, we have to uninstall all opencv pip versions from the jetson after reinstall of our package:
 ```
 pip uninstall opencv-python
 ```

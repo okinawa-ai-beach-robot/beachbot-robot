@@ -8,12 +8,11 @@ from ..config import config
 from ..utils.vrepsimulation import vrep
 from coppeliasim_zmqremoteapi_client import *
 from pathlib import Path
-from beachbot.utils.github import download as github_download
+from beachbot.utils.github_api import download as github_download
 
 class VrepRobotSimV1(RobotInterface):
     def __init__(self, scene=None):
         super().__init__()
-
         self._base_folder_sim = config.BEACHBOT_SIMULATION
 
         self.scene_path=self._base_folder_sim / scene
@@ -39,6 +38,8 @@ class VrepRobotSimV1(RobotInterface):
 
         # Init Robot arm, gripper limits [q_open, q_close] must be adjusted to gripper hardware!
         self.arm = VrepRoArmM1Sim(self._vrep_sim, gripper_limits=[-10,20]) #-1..20 is for custom 3 finger gripper sim model!
+        
+
 
     @vrep
     def _vrep_init(self, scene):

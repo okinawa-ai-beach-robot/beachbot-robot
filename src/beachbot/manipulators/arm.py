@@ -58,9 +58,15 @@ class Arm:
         self.qs = self.q_home
         self.qs_target = None
 
-        self._write_lock = threading.Lock()
+        
         self._status_lock = threading.Lock()
         self._joint_changed = threading.Condition()
+
+        asset_path = Path(__file__).parent.parent / "assets"
+        pickup_path = asset_path / "pickup.npz"
+        toss_path = asset_path / "toss.npz"
+        self.pickup_trajectory = Trajectory.from_file(pickup_path)
+        self.toss_trajectory = Trajectory.from_file(toss_path)
 
     def fkin(self, qs):
         """
@@ -91,9 +97,13 @@ class Arm:
         p = translate(p, (self.LEN_B, self.LEN_A))
 
         # Rotate robot arm in x/y plane (joint 1):
-        print("rotate", p[0],  angle_1 - 180, )
+        print(
+            "rotate",
+            p[0],
+            angle_1 - 180,
+        )
         p_plane = rotate((p[0], self.LEN_H), angle_1 - 180)
-        print("rotate", p[0],  angle_1 - 180, p_plane)
+        print("rotate", p[0], angle_1 - 180, p_plane)
         # Combine X/Z and X/Y plane caculation for final result:
         return (p_plane[0], p_plane[1], p[1])
 
@@ -146,6 +156,26 @@ class Arm:
         Overridden by child classes as API differs greatly
         """
         pass
+
+    def normalize_gripper_angle(self, angle):
+        """
+        Convert from physical gripper angles to normalized values [0..1].
+        Gripper interface to accept values [0..1], but actual serial interface to
+        servos accepts actual angle values. We limit these values to between
+        gripper_open and gripper_close.
+        """
+        return (angle - self.gripper_open) / (self.gripper_close - self.gripper_open)
+
+    def denormalize_gripper_angle(self, percentage):
+        """
+        Convert from normalized values [0..1] to physical gripper angles.
+        Gripper interface to accept values [0..1], but actual serial interface to
+        servos accepts actual angle values. We limit these values to between
+        gripper_open and gripper_close.
+        """
+        if percentage < 0 or percentage > 1:
+            raise ValueError("Angle must be between 0 and 1")
+        return self.gripper_open + (self.gripper_close - self.gripper_open) * percentage
 
     def set_gripper(self, percent):
         """
@@ -400,7 +430,9 @@ class Arm:
     def cleanup(self):
         pass
 
-    def wait_joint_target_arrival(self, max_distance=0.5, timeout=10, polling_interval=0.1):
+    def wait_joint_target_arrival(
+        self, max_distance=1.0, timeout=10, polling_interval=0.1
+    ):
         """
         Wait until actual joint angles are within the target range or timeout.
         Parameters:
@@ -415,17 +447,25 @@ class Arm:
         while True:
             qs = self.get_joint_angles()
             qs_target = self.get_joint_targets()
+            dist = np.linalg.norm(qs - qs_target)
             if np.linalg.norm(qs - qs_target) <= max_distance:
                 return True
             if time() - t_start > timeout:
                 return False
+            print("Distance to target: ", dist)
+            print("Current joint angles: ", qs)
+            print("Target joint angles: ", qs_target)
             sleep(polling_interval)
 
     def pickup(self, speed_factor=20):
-        self.replay_trajectory(pickup_trajectory.qs, pickup_trajectory.ts, speed_factor=speed_factor)
+        self.replay_trajectory(
+            self.pickup_trajectory.qs, self.pickup_trajectory.ts, speed_factor=speed_factor
+        )
 
     def toss(self, speed_factor=20):
-        self.replay_trajectory(toss_trajectory.qs, toss_trajectory.ts, speed_factor=speed_factor)
+        self.replay_trajectory(
+            self.toss_trajectory.qs, self.toss_trajectory.ts, speed_factor=speed_factor
+        )
 
 
 class Trajectory:
@@ -438,7 +478,7 @@ class Trajectory:
     def from_file(cls, trajectory_path: str):
         """Class method to create a Trajectory instance from a file."""
         data = np.load(trajectory_path)
-        return cls(ts=data['ts'], qs=data['qs'], taus=data['taus'])
+        return cls(ts=data["ts"], qs=data["qs"], taus=data["taus"])
 
 
 def rotate(point, angle, origin=(0, 0)):
@@ -464,25 +504,3 @@ def translate(point, offset):
     Translate point by offset.
     """
     return point[0] + offset[0], point[1] + offset[1]
-
-
-def load_trajectory(trajectory_path: Path):
-    data = np.load(str(trajectory_path))
-    ts = data["ts"]
-    qs = data["qs"]
-    taus = data["taus"]
-    return ts, qs, taus
-
-
-def load_default_trajectories():
-    global pickup_trajectory, toss_trajectory
-    asset_path = Path(__file__).parent.parent / 'assets'
-    pickup_path = asset_path / 'pickup.npz'
-    toss_path = asset_path / 'toss.npz'
-    pickup_trajectory = Trajectory.from_file(pickup_path)
-    toss_trajectory = Trajectory.from_file(toss_path)
-
-
-pickup_trajectory: Trajectory = None
-toss_trajectory: Trajectory = None
-load_default_trajectories()

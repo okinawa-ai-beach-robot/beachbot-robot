@@ -47,6 +47,7 @@ class DifferentialDrive(threading.Thread):
         self.motor_right.change_speed(self._motor_right_speed)
 
         self._last_command_update=time.time()
+        self._last_command_overwrite=-1
         self._command_timeout=command_timeout
 
 
@@ -131,18 +132,31 @@ class DifferentialDrive(threading.Thread):
                 self._motor_right_speed = int(__motor_right_speed)
                 self.motor_right.change_speed(self._motor_right_speed)
 
+
+            update_interval = (1.0 / self.update_freq)
+            if self._last_command_overwrite>0: self._last_command_overwrite -= update_interval
+
             t_end = time.time()
-            t_wait = (1.0 / self.update_freq) - (t_end - t_start)
+            t_wait = update_interval - (t_end - t_start)
             if t_wait > 0:
                 time.sleep(t_wait)
         # Cleanup, end control loop, stop motors :)
-
         self.motor_left.change_speed(0)
         self.motor_right.change_speed(0)
 
-    def set_target(self, angular_vel=0, velocity=0):
+    def set_target(self, angular_vel=0, velocity=0, force_overwrite:float = 0):
+        if self._last_command_overwrite>0 and not force_overwrite>0:
+            # ignore input commands if a previous target command forced an overwrite for a certain amount
+            # self._last_command_overwrite seconds left until we are allowed to send a command again....
+            return
+        
         self._last_command_update = time.time()
         self._target_angular_vel = angular_vel
         self._target_velocity = velocity
+
+        if force_overwrite>0:
+            # request blocking if input commands for force_overwrite seconds
+            # Use case: e.g. manual command inputs block all other motor commands for a certain amount of time
+            self._last_command_overwrite=force_overwrite
 
 
