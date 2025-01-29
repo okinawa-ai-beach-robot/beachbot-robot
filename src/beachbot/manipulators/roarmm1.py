@@ -135,7 +135,6 @@ class RoArmM1(Arm):
         if pos > 1:
             pos = 1
         jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
-        qs[-1] = jpos
 
 
         self.qs_target = qs
@@ -147,7 +146,7 @@ class RoArmM1(Arm):
                 "P2": qs[1],
                 "P3": qs[2],
                 "P4": qs[3],
-                "P5": qs[4],
+                "P5": jpos,
                 "S1": 400,
                 "S2": 1200,
                 "S3": 400,
