@@ -103,6 +103,7 @@ class RobotInterface(object):
                     # store box result for buffered image
                     with self.buffered_camera_lock:
                         self.buffered_camera_image_boxes[which_cam]=boxlist
+                        self.buffered_camera_image[which_cam]=frame
 
                     with self.controller_lock:
                         if self.controller is not None:
@@ -150,11 +151,6 @@ class RobotInterface(object):
                 self.cameradevices[which].start()
             res = self.cameradevices[which].read()
 
-            if res is not None:
-                # buffer most recent camera image
-                with self.buffered_camera_lock:
-                    self.buffered_camera_image[which]=res
-                    self.buffered_camera_image_boxes[which]=None
 
         return res
 

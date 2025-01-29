@@ -2,14 +2,13 @@ import os, threading
 import cv2
 
 
+
 """ 
 gstreamer_pipeline_builder returns a GStreamer pipeline for capturing from the CSI camera
 Flip the image by setting the flip_method (most common values: 0 and 2)
 display_width and display_height determine the size of each camera pane in the window on the screen
 Default 1920x1080 displayd in a 1/4 size window
 """
-
-
 def gstreamer_pipeline_builder(
     sensor_id=0,
     capture_width=1920,
@@ -37,7 +36,6 @@ def gstreamer_pipeline_builder(
         )
     )
 
-
 class JetsonCsiCameraOpenCV(threading.Thread):
     def __init__(self, width=1280, height=720, fps=15, dev_id=0, autostart=True) -> None:
         # Init superclass thread
@@ -63,6 +61,8 @@ class JetsonCsiCameraOpenCV(threading.Thread):
         print(os.popen("v4l2-ctl --list-formats-ext").read())
 
     def start(self):
+        if "DISPLAY" not in os.environ:
+            os.environ['DISPLAY'] = ':0.0'
         self._cap = cv2.VideoCapture(
             gstreamer_pipeline_builder(
                 sensor_id=self._dev_id,

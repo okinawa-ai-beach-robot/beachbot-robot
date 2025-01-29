@@ -1,6 +1,19 @@
-# the future is now...
+# the future is now... (avoids printing pytoch warnings about deprecated functions to console)
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+
+from pathlib import Path
+import platform, ctypes
+
+if platform.system() == "Linux":
+    # Workaround
+    # Force libgomp to be loaded before other libraries consuming dynamic TLS (to avoid running out of STATIC_TLS)
+    # Avoids error: "...libGLdispatch.so.0: cannot allocate memory in static TLS block"
+    # Occurs on Jetson
+    #preload_lib = Path("/lib/aarch64-linux-gnu/libGLdispatch.so.0")
+    preload_lib = Path("/home/beachbot/.local/lib/python3.8/site-packages/torch.libs/libgomp-804f19d4.so.1.0.0")
+    if preload_lib.is_file():
+        ctypes.cdll.LoadLibrary(preload_lib.absolute().as_posix())
 
 import requests
 
