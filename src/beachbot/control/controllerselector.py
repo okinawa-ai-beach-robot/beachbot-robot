@@ -3,6 +3,7 @@ from .robotcontroller import RobotController, BoxDef
 from ..robot.robotinterface import RobotInterface
 from ..utils.controllercollection import PIDController
 from .approachdebris import ApproachDebris
+from .pickupcontroller import PickupController
 
 class ControllerSelector(RobotController):
     def __init__(self):
@@ -10,6 +11,7 @@ class ControllerSelector(RobotController):
 
         self.controllers : dict[str,RobotController] = {
             "approach": ApproachDebris(),
+            "pickup": PickupController(),
             #....
             # add here list of used sub-controller modules ... 
         }
@@ -58,7 +60,8 @@ class ControllerSelector(RobotController):
 
         # TODO add/modify logic to select one of the available controllers
         current_controller : RobotController = self.controllers["approach"]
-        # ...
+        # if approached to object ... then ... TODO
+        # ... current_controller : RobotController = self.controllers["pickup"]
 
 
         # after selection of controller, forward data
