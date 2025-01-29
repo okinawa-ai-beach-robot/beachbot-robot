@@ -25,8 +25,11 @@ class VrepCameraSim():
 
     @vrep
     def _read_visionsensor(self):
-        img, [resX, resY] = self.vrep_sim.getVisionSensorImg(self._cam_id)
-        return img, [resX, resY]
+        try:
+            img, [resX, resY] = self.vrep_sim.getVisionSensorImg(self._cam_id)
+            return img, [resX, resY]
+        except:
+            return None, (0,0)
 
 
 
@@ -41,6 +44,8 @@ class VrepCameraSim():
 
     def read(self):
         img, [resX, resY] = self._read_visionsensor()
+        if img is None:
+            return None
         self._width=resX
         self._height=resY
         img = np.frombuffer(img, dtype=np.uint8).reshape(self._height, self._width, 3)

@@ -163,3 +163,5 @@ cython_debug/
 _version.py
 app/*.mp4
 *.pt
+
+*.swp

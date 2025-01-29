@@ -82,8 +82,9 @@ class RoArmM1(Arm):
         self.write_io('{"T":5}')
         for strdata in self.device.readlines():
             if not strdata.startswith(b"{"):
-                # Ignore information messages
-                # Only interpred json data {....}
+                # Ignore debug information messages
+                # Only interpred json data {....}, must start with '{'
+                # Otherwise print message:
                 print("Debug message from servo board:", strdata.decode())
                 continue
             try:
@@ -103,7 +104,7 @@ class RoArmM1(Arm):
                         with self._joint_changed:
                             self._joint_changed.notify_all()
                 else:
-                    # response from command!
+                    # response from send commands to motor board!
                     # print("response from servoboard:", data.decode())
                     # One can do something, check fi command was successful or so ... 
                     pass
@@ -138,7 +139,7 @@ class RoArmM1(Arm):
                 "P2": qs[1],
                 "P3": qs[2],
                 "P4": qs[3],
-                "P5": qs[4],
+                "P5": jpos,
                 "S1": 400,
                 "S2": 1200,
                 "S3": 400,

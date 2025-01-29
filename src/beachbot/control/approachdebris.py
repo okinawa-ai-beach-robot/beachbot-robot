@@ -1,20 +1,49 @@
 from typing import List
-from .robotcontroller import RobotController, BoxDef
+
 from ..robot.robotinterface import RobotInterface
+from .robotcontroller import RobotController, BoxDef
 from ..utils.controllercollection import PIDController
 
 
 class ApproachDebris(RobotController):
-    def __init__(self, targetfilter=None):
+    def __init__(self):
         super().__init__()
-        self.targetfilter=targetfilter
+        
 
-        self.ctrl = PIDController(setpoint_x=0.5, setpoint_y=0.25, kp=0.1)
+        default_kp = 0.0
+        default_setpoint_x = 0.5
+        default_setpoint_y = 0.25
+
+        self._register_property("kp", default_kp)
+        self._register_property("setpoint_x", default_setpoint_x)
+        self._register_property("setpoint_y", default_setpoint_y)
+
+
+        self._register_property("setpoint_y", default_setpoint_y)
+
+
+        self.targetfilter=["chair"]
+        # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
+        self._register_property("targetfilter", ",".join(self.targetfilter))
+
+
+        
+
+        self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=default_kp)
 
     
-    def set_property(self, prop_id, prop_value):
-        raise NotImplementedError()
 
+    def _property_changed_callback(self, name):
+        if name=="kp":
+            self.ctrl.kp = self.get_property(name)
+        elif name=="setpoint_x":
+            self.ctrl.setpoint_x=self.get_property(name)
+        elif name=="setpoint_y":
+            self.ctrl.setpoint_y=self.get_property(name)
+        elif name=="targetfilter":
+            self.targetfilter = self.get_property(name).split(",")
+        else:
+            super()._property_changed_callback(name)
 
     def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False):
         trash_to_follow : BoxDef = None
