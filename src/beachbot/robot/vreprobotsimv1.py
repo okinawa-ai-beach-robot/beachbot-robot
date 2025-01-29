@@ -8,7 +8,7 @@ from ..config import config
 from ..utils.vrepsimulation import vrep
 from coppeliasim_zmqremoteapi_client import *
 from pathlib import Path
-from beachbot.utils.github import download as github_download
+from beachbot.utils.github_api import download as github_download
 
 class VrepRobotSimV1(RobotInterface):
     def __init__(self, scene=None):

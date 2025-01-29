@@ -31,6 +31,7 @@ class RoArmM1(Arm):
 
             except Exception as e:
                 print("error open serial port: " + str(e))
+                raise e
 
         if self.is_connected:
             self.thread = Thread(target=self.run, daemon=True).start()
@@ -44,16 +45,13 @@ class RoArmM1(Arm):
             if functime < self.interval:
                 time.sleep(self.interval - functime)
             else:
-                logger.warn("Error [TODO: handle properly, for now wait 1 sec and try again...]: RoArmUpdate loop out of time! ("+ str(functime)+ ","+ str(self.interval)+ ")")
-                time.sleep(1.0)
-
-                # raise Exception(
-                #     "Error: Out of time! ("
-                #     + str(functime)
-                #     + ","
-                #     + str(self.interval)
-                #     + ")"
-                # )
+                raise Exception(
+                    "Error: Out of time! ("
+                    + str(functime)
+                    + ","
+                    + str(self.interval)
+                    + ")"
+                )
 
     def write_io(self, data):
         with self._write_lock:
@@ -95,10 +93,7 @@ class RoArmM1(Arm):
                     # robot status package recieved:
                     qs = [float(data.get("A" + str(num + 1), 0)) for num in range(5)]
                     taus = [float(data.get("T" + str(num + 1), 0)) for num in range(5)]
-                    # Convert gripper joint angle into range 0..1
-                    qs[4] = (qs[4] - self.gripper_open) / (
-                        self.gripper_close - self.gripper_open
-                    )
+                    qs[4] = self.normalize_gripper_angle(qs[4])
                     qs_changed = any(
                         [math.fabs(a - b) > 0.1 for a, b in zip(qs, self.qs)]
                     )
@@ -129,15 +124,8 @@ class RoArmM1(Arm):
             )
 
     def set_joint_targets(self, qs):
-        pos = qs[-1]
-        if pos < 0:
-            pos = 0
-        if pos > 1:
-            pos = 1
-        jpos = self.gripper_open + (self.gripper_close - self.gripper_open) * pos
+        percent = self.denormalize_gripper_angle(qs[4])
 
-
-        self.qs_target = qs
         # TODO add simple bounds/in-range check!
         data = json.dumps(
             {
@@ -146,7 +134,7 @@ class RoArmM1(Arm):
                 "P2": qs[1],
                 "P3": qs[2],
                 "P4": qs[3],
-                "P5": jpos,
+                "P5": percent,
                 "S1": 400,
                 "S2": 1200,
                 "S3": 400,
