@@ -42,6 +42,7 @@ sudo apt-get install ffmpeg x264 libx264-dev
 Assuming you follow the guide above for installing on the Jetson, this should not be necessary, but in the event you see any errors, the information below may be of use:
 
 On jetson, python-opencv is installed by nvidia and could be hidden by the pip version.
+(main casue is that opencv on pip is compiled without gstreamer)
 The pip-version does not support the jetson camera, thus, we have to uninstall all opencv pip versions from the jetson after reinstall of our package:
 ```
 pip uninstall opencv-python
