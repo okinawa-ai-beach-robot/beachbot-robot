@@ -124,7 +124,6 @@ class RoArmM1(Arm):
             )
 
     def set_joint_targets(self, qs):
-        self.qs_target = qs
         percent = self.denormalize_gripper_angle(qs[4])
 
         # TODO add simple bounds/in-range check!
