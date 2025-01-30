@@ -19,6 +19,10 @@ try:
 
         def __init__(self, model_file=None, use_accel=True) -> None:
             super().__init__(None)
+
+            self.conf_threshold = 0.3
+            self.register_property("conf_threshold",max_value=1.0, min_value=0.0)
+
             if model_file is None:
                 model_file = str(config.BEACHBOT_MODELS) + "/Original_YOLOv5s/"
             if "." in model_file:
@@ -48,26 +52,26 @@ try:
                 try:
                     if os.path.isfile(model_folder + os.path.sep + "best.pt"):
                         self.net = torch.hub.load(
-                            "ultralytics/yolov5",
+                            "ultralytics/yolov5:master",
                             "custom",
                             path=model_folder + os.path.sep + "best.pt",
                         )
                     else:
                         self.net = torch.hub.load(
-                            "ultralytics/yolov5",
+                            "ultralytics/yolov5:master",
                             "custom",
                             path=model_folder + os.path.sep + "best.onnx",
                         )
                 except Exception as ex:
                     print("Error:", ex)
             else:
-                self.net = torch.hub.load("ultralytics/yolov5", self.model_type)
+                self.net = torch.hub.load("ultralytics/yolov5:master", self.model_type)
                 self.list_classes = []
                 for clsnr in range(max(list(self.net.names.keys())) + 1):
                     self.list_classes.append(self.net.names[clsnr])
                 self.num_classes = len(self.list_classes)
 
-            self.net.conf = 0.25  # NMS confidence threshold
+            self.net.conf = self.conf_threshold  # NMS confidence threshold
             self.net.iou = 0.45  # NMS IoU threshold
             self.net.agnostic = False  # NMS class-agnostic
             self.net.multi_label = False  # NMS multiple labels per box

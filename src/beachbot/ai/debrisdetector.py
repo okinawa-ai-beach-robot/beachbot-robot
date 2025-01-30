@@ -3,9 +3,10 @@ import yaml
 
 
 from beachbot.config import config, logger
+from beachbot.utils.properties import HasProperties
 
 
-class DebrisDetector:
+class DebrisDetector(HasProperties):
     _model_lib = {}
     _description = """
     Abstract base class of coastal debris classificator.\n
@@ -13,6 +14,11 @@ class DebrisDetector:
     """
 
     def __init__(self, model_file=None) -> None:
+        super().__init__()
+
+        self.debug=False
+        self.register_property("debug") 
+
         self.img_height = -1
         self.img_width = -1
         self.dtype = None
