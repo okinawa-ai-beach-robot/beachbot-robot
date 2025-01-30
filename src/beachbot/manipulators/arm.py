@@ -286,7 +286,7 @@ class Arm:
             speed_factor: scaling factor to divide ts by in order to speed up playback
         """
         # Set initial position and wait
-        self.set_joint_targets(qs[0])
+        self.set_joint_targets(qs[0], offsets=[0, 0, 1.2, 0, 0])
         self.wait_joint_target_arrival()
         ts = ts / speed_factor
         ts_start = time()
@@ -431,7 +431,7 @@ class Arm:
         pass
 
     def wait_joint_target_arrival(
-        self, max_distance=1.0, timeout=10, polling_interval=0.1
+        self, max_distance=2.0, timeout=10, polling_interval=0.1
     ):
         """
         Wait until actual joint angles are within the target range or timeout.
@@ -455,6 +455,7 @@ class Arm:
             print("Distance to target: ", dist)
             print("Current joint angles: ", qs)
             print("Target joint angles: ", qs_target)
+            print("Error in joint angles: ", qs - qs_target)
             sleep(polling_interval)
 
     def pickup(self, speed_factor=20):

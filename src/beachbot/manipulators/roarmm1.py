@@ -45,12 +45,8 @@ class RoArmM1(Arm):
             if functime < self.interval:
                 time.sleep(self.interval - functime)
             else:
-                raise Exception(
-                    "Error: Out of time! ("
-                    + str(functime)
-                    + ","
-                    + str(self.interval)
-                    + ")"
+                logger.error(
+                    "Error: refresh_robot_state took longer to run than interva.(" + str(functime) + "," + str(self.interval) + ")"
                 )
 
     def write_io(self, data):
@@ -123,7 +119,10 @@ class RoArmM1(Arm):
                 "joint number range is 1 to 5 and value range is percent x10 (0-1000)"
             )
 
-    def set_joint_targets(self, qs):
+    def set_joint_targets(self, qs, offsets=None):
+        if offsets is not None:
+            for i in range(5):
+                qs[i] = qs[i] + offsets[i]
         self.qs_target = qs
         percent = self.denormalize_gripper_angle(qs[4])
 
