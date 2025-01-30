@@ -2,6 +2,7 @@ from typing import List
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.robotcontroller import RobotController, BoxDef
 from beachbot.utils.controllercollection import PIDController
+from beachbot.config import logger
 
 
 class ApproachDebris(RobotController):
@@ -38,7 +39,18 @@ class ApproachDebris(RobotController):
         else:
             super()._property_changed_callback(name)
 
-    def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False):
+    def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False) -> bool:
+        """
+        Approach trash
+
+        Args:
+            robot (RobotInterface): Robot interface
+            detections (List[BoxDef], optional): List of detections. Defaults to None.
+            debug (bool, optional): Debug mode. Defaults to False.
+
+        Returns:
+            bool: True if controller has acheived target, False otherwise 
+        """
         if detections is None:
             return
 
@@ -64,7 +76,14 @@ class ApproachDebris(RobotController):
             if debug:
                 print("dir_command:", dir_command)
             robot.set_target_velocity(-dir_command[0], -dir_command[1])
+            error_x = self.ctrl.prev_error_x
+            error_y = self.ctrl.prev_error_y
+            if error_x < 0.01 and error_y < 0.01:
+                robot.set_target_velocity(0, 0)
+                logger.info("ApproachDebris: Target reached")
+                return True
 
         else:
-            # Do random movements to find a trash:
-            pass
+            robot.set_target_velocity(50, 0)
+
+        return False
