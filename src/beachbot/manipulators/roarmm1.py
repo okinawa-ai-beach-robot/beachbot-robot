@@ -168,5 +168,5 @@ class RoArmM1(Arm):
 
 
 class RoArmM1_Custom3FingerGripper(RoArmM1):
-    def __init__(self, rate_hz=20, serial_port="/dev/ttyUSB0", gripper_limits=[42, 60]):
+    def __init__(self, rate_hz=10, serial_port="/dev/ttyUSB0", gripper_limits=[42, 60]):
         super().__init__(rate_hz, serial_port, gripper_limits)
