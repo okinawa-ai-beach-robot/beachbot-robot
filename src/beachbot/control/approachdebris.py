@@ -1,3 +1,4 @@
+import math
 from typing import List
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.robotcontroller import RobotController, BoxDef
@@ -9,52 +10,59 @@ class ApproachDebris(RobotController):
     def __init__(self):
         super().__init__()
 
-        default_kp = 100.0
-        default_setpoint_x = 0.5
-        default_setpoint_y = 0.25
-        detection_threshold = 0.5
+        
+        
         # Used for a basic hysteresis filter
         self.missing_target_count = 0
 
-        self._register_property("kp", default_kp)
-        self._register_property("setpoint_x", default_setpoint_x)
-        self._register_property("setpoint_y", default_setpoint_y)
-        self._register_property("detection_threshold", detection_threshold)
-        self._register_property("setpoint_y", default_setpoint_y)
+        default_kp = 100.0
+        default_setpoint_x = 0.5
+        default_setpoint_y = 0.25
 
-        self.targetfilter=["bottle"]
+        self.output_enabled=False
+        self.register_property("output_enabled")
+
+        self.register_property("kp", default_kp)
+        self.register_property("setpoint_x", default_setpoint_x)
+        self.register_property("setpoint_y", default_setpoint_y)
+
+        self.detection_threshold = 0.5
+        self.register_property("detection_threshold")
+
+        self.pid_debug=False
+        self.register_property("pid_debug")
+
+
+        
+
+        self.targetfilter=["bottle", "cup", "trash_easy"]
         # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
-        self._register_property("targetfilter", ",".join(self.targetfilter))
+        self.register_property("targetfilter", ",".join(self.targetfilter))
         self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=default_kp)
 
-    def _property_changed_callback(self, name):
-        if name=="kp":
-            self.ctrl.kp = self.get_property(name)
-        elif name=="setpoint_x":
+    def property_changed_callback(self, name):
+
+        # Setpoints have to be set in the ctrl class, other properties are set in this class as default
+        if name=="setpoint_x":
             self.ctrl.setpoint_x=self.get_property(name)
         elif name=="setpoint_y":
             self.ctrl.setpoint_y=self.get_property(name)
-        elif name=="targetfilter":
-            self.targetfilter = self.get_property(name).split(",")
-        elif name=="detection_threshold":
-            print("detection_threshold", self.get_property(name))
+        elif name=="kp":
+            self.ctrl.kp=self.get_property(name)
         else:
-            super()._property_changed_callback(name)
+            super().property_changed_callback(name)
 
-    def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False) -> bool:
+    def update(self, robot: RobotInterface, detections: List[BoxDef]=None) -> bool:
         """
         Approach trash
 
         Args:
             robot (RobotInterface): Robot interface
             detections (List[BoxDef], optional): List of detections. Defaults to None.
-            debug (bool, optional): Debug mode. Defaults to False.
 
         Returns:
             bool: True if controller has acheived target, False otherwise 
         """
-        if detections is None:
-            return
 
         # trash_to_follow is a list of detections with easy sorting based on BoxDef.confidence
         # It should only contain objects that match the targetfilter
@@ -72,16 +80,23 @@ class ApproachDebris(RobotController):
             trash_x = best_match.left+best_match.w/2
             trash_y = 1.0 - (best_match.top+best_match.h/2) # 0 is bottom, 1 is top
 
-            if debug:
+            if self.debug:
                 print("trash position:", trash_x, trash_y)
 
-            dir_command = self.ctrl.get_output(trash_x, trash_y)
-            if debug:
+            dir_command = self.ctrl.get_output(trash_x, trash_y, self.pid_debug)
+            dir_error_x = self.ctrl.prev_error_x
+            dir_error_y = self.ctrl.prev_error_y
+
+            if self.debug:
                 print("dir_command:", dir_command)
-            robot.set_target_velocity(-dir_command[0], -dir_command[1])
-            error_x = self.ctrl.prev_error_x
-            error_y = self.ctrl.prev_error_y
-            if error_x < 0.01 and error_y < 0.01:
+                print("dir_error:", (dir_error_x, dir_error_y))
+
+            if self.output_enabled:
+                robot.set_target_velocity(-dir_command[0], -dir_command[1])
+            else:
+                robot.set_target_velocity(0,0)
+
+            if abs(dir_error_x) < 0.1 and abs(dir_error_y) < 0.1:
                 robot.set_target_velocity(0, 0)
                 logger.info("ApproachDebris: Target reached")
                 return True
@@ -89,7 +104,11 @@ class ApproachDebris(RobotController):
         else:
             self.missing_target_count += 1
             if self.missing_target_count > 10:
-                robot.platform.motor_left.change_speed(50)
-                robot.platform.motor_right.change_speed(-50)
+                # Rotate robot, TODO add a 3rd controller for "random seach"
+                # But requires a return value more than True/False, maybe string? or other way
+                # for the controllerseelctor to check if (1) approaching, (2) reached, (3) Lost
+                if self.output_enabled:
+                    robot.set_target_velocity(angular_velocity=50, velocity=0)
+
 
         return False
