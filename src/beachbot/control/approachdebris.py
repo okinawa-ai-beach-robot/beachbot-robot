@@ -1,8 +1,7 @@
 from typing import List
-
-from ..robot.robotinterface import RobotInterface
-from .robotcontroller import RobotController, BoxDef
-from ..utils.controllercollection import PIDController
+from beachbot.robot.robotinterface import RobotInterface
+from beachbot.control.robotcontroller import RobotController, BoxDef
+from beachbot.utils.controllercollection import PIDController
 
 
 class ApproachDebris(RobotController):
