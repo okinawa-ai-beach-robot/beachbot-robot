@@ -83,8 +83,8 @@ try:
 
             self.dtype = np.float32
 
-        def apply_model(self, inputs, confidence_threshold=0.2, units_percent=True):
-            self.net.conf = confidence_threshold  # NMS confidence threshold
+        def apply_model(self, inputs, units_percent=True):
+            self.net.conf = self.conf_threshold  # NMS confidence threshold
             row, col, _ = inputs.shape
             with torch.no_grad():
                 results = self.net([inputs[..., ::-1]], size=row) # detect on BGR->RGB pixel format

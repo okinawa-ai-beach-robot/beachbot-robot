@@ -44,7 +44,7 @@ class Yolo5Onnx(Yolo5Detector):
         elif "float32" in input_type or "float" in input_type:
             self.dtype = np.float32
 
-    def apply_model(self, inputs, confidence_threshold=0.2, units_percent=True):
+    def apply_model(self, inputs, units_percent=True):
         img = self._crop_and_scale_image(inputs)
         img = np.swapaxes(np.swapaxes(img, 0, -1), -2, -1)[None, :, :, :] / 255.0
         if img.dtype != self.dtype:
@@ -52,7 +52,7 @@ class Yolo5Onnx(Yolo5Detector):
         prediction = self.session.run(None, {"images": img})
 
         result_class_ids, result_confidences, result_boxes = self._wrap_detection(
-            prediction[0][0], confidence_threshold=confidence_threshold
+            prediction[0][0], confidence_threshold=self.conf_threshold
         )
         self._map_resuts_to_input_image(
             result_boxes, inputs, units_percent=units_percent

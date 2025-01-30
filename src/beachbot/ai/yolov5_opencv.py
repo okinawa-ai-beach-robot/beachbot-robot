@@ -48,7 +48,7 @@ class Yolo5OpenCV(Yolo5Detector):
         #     self.dtype=np.float32
 
 
-    def apply_model(self, inputs, confidence_threshold=0.2, units_percent=True):  
+    def apply_model(self, inputs, units_percent=True):  
         img = self._crop_and_scale_image(inputs)
         row, col, _ = img.shape
         _max = max(col, row)

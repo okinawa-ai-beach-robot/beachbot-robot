@@ -35,7 +35,9 @@ class BlobDetectorOpenCV(DebrisDetector):
                         "other_avoid_ocean",
                         "others_traverable",
                         "trash_easy",
-                        "trash_hard",]
+                        "trash_hard",
+                        "blue_dot"
+                        ]
     
 
 
@@ -43,7 +45,7 @@ class BlobDetectorOpenCV(DebrisDetector):
 
 
 
-    def apply_model(self, inputs, confidence_threshold=0.2, units_percent=True, debug=False):  
+    def apply_model(self, inputs, units_percent=True, debug=False):  
         img = inputs
         row, col, _ = img.shape
         s_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)  
@@ -81,7 +83,7 @@ class BlobDetectorOpenCV(DebrisDetector):
                 print("Box from blob is:", left, top, width, height)
             bbox = np.array([left, top, width, height])
             result_boxes.append(bbox)
-            result_class_ids.append(self.list_classes.index("trash_easy"))
+            result_class_ids.append(self.list_classes.index("blue_dot"))
             result_confidences.append(1.0)
 
 

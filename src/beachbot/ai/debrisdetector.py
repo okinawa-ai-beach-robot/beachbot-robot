@@ -18,6 +18,7 @@ class DebrisDetector:
         self.dtype = None
         self.num_classes = 0
         self.list_classes = []
+        self.conf_threshold=0.2
 
         if model_file is not None:
             if "." in model_file:

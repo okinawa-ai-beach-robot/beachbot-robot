@@ -61,7 +61,7 @@ try:
 
             self.dtype = np.float32
 
-        def apply_model(self, inputs, confidence_threshold=0.2, units_percent=True):
+        def apply_model(self, inputs, units_percent=True):
             # self.net.conf = confidence_threshold  # NMS confidence threshold
             row, col, _ = inputs.shape
             inputs = (
@@ -78,7 +78,7 @@ try:
             result_boxes = []
 
             for i in range(res.shape[0]):
-                if res[i, 4] > confidence_threshold:
+                if res[i, 4] > self.conf_threshold:
                     result_class_ids.append(int(res[i, 5]))
                     result_confidences.append(res[i, 4])
                     left = res[i, 0]

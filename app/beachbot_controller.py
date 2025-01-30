@@ -157,6 +157,8 @@ def toggle_detection(doit, ai_model=Yolo5TorchHub):
     print("Detection:", doit)
     if doit:
         robot.set_detector(ai_model())
+        # Set Inital confidence threshold for object detector
+        robot.get_detector().conf_threshold=0.7
     else:
         robot.set_detector(None)
     ui_model_info.refresh(robot)
@@ -274,8 +276,10 @@ def convert(frame: np.ndarray) -> bytes:
 
 
 
-def add_imgbox(pleft=0, ptop=0, w=0, h=0, clsstr=None, color='#FF0000', align="start"):
+def add_imgbox(pleft=0, ptop=0, w=0, h=0, clsstr=None, color='#FF0000', conf_value=None, align="start"):
     svgstr=""
+    if conf_value is not None:
+        clsstr+=f"({conf_value:.2f})"
     # color = 'SkyBlue'
     if clsstr==target_obj:
         # Overwrite green color for followed object... 
@@ -294,7 +298,7 @@ def update_detection(robot:RobotInterface):
     boxsvg = ""
     if boxes is not None:
         for b in boxes:
-            boxsvg += add_imgbox(b.left, b.top, b.w, b.h, b.class_name)
+            boxsvg += add_imgbox(b.left, b.top, b.w, b.h, b.class_name, conf_value=b.confidence)
     return frame, boxsvg
 
 

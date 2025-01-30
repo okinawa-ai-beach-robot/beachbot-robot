@@ -8,17 +8,16 @@ from ..utils.controllercollection import PIDController
 class ApproachDebris(RobotController):
     def __init__(self):
         super().__init__()
-        
 
         default_kp = 0.0
         default_setpoint_x = 0.5
         default_setpoint_y = 0.25
+        detection_threshold = 0.5
 
         self._register_property("kp", default_kp)
         self._register_property("setpoint_x", default_setpoint_x)
         self._register_property("setpoint_y", default_setpoint_y)
-
-
+        self._register_property("detection_threshold", detection_threshold)
         self._register_property("setpoint_y", default_setpoint_y)
 
 
@@ -42,6 +41,8 @@ class ApproachDebris(RobotController):
             self.ctrl.setpoint_y=self.get_property(name)
         elif name=="targetfilter":
             self.targetfilter = self.get_property(name).split(",")
+        elif name=="detection_threshold":
+            print("detection_threshold", self.get_property(name))
         else:
             super()._property_changed_callback(name)
 
