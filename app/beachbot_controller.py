@@ -158,7 +158,7 @@ def toggle_detection(doit, ai_model=Yolo5TorchHub):
     if doit:
         robot.set_detector(ai_model())
         # Set Inital confidence threshold for object detector
-        robot.get_detector().conf_threshold=0.7
+        robot.get_detector().conf_threshold=0.5
     else:
         robot.set_detector(None)
     ui_model_info.refresh(robot)
