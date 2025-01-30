@@ -91,6 +91,8 @@ class JetsonCsiCameraOpenCV(threading.Thread):
 
     def read(self):
         with self._lock:
+            if self._frame is None:
+                raise Exception("Camera frame is null, camera connection failed!")
             img_cpy = self._frame.copy()
         return img_cpy
 
