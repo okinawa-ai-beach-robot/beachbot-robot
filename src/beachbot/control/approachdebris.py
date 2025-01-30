@@ -9,7 +9,7 @@ class ApproachDebris(RobotController):
     def __init__(self):
         super().__init__()
 
-        default_kp = 0.0
+        default_kp = 100.0
         default_setpoint_x = 0.5
         default_setpoint_y = 0.25
         detection_threshold = 0.5
@@ -21,7 +21,7 @@ class ApproachDebris(RobotController):
         self._register_property("setpoint_y", default_setpoint_y)
 
 
-        self.targetfilter=["chair"]
+        self.targetfilter=["bottle"]
         # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
         self._register_property("targetfilter", ",".join(self.targetfilter))
 
