@@ -2,7 +2,7 @@ from time import sleep, time
 from pathlib import Path
 import numpy as np
 import math
-from beachbot.config import config
+from beachbot.config import config, logger
 import threading
 
 
@@ -452,10 +452,8 @@ class Arm:
                 return True
             if time() - t_start > timeout:
                 return False
-            print("Distance to target: ", dist)
-            print("Current joint angles: ", qs)
-            print("Target joint angles: ", qs_target)
-            print("Error in joint angles: ", qs - qs_target)
+            logger.info("Distance to target: " + str(dist))
+            logger.info("Error in joint angles: " + str(qs - qs_target))
             sleep(polling_interval)
 
     def pickup(self, speed_factor=20):
