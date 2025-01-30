@@ -19,17 +19,10 @@ class ApproachDebris(RobotController):
         self._register_property("detection_threshold", detection_threshold)
         self._register_property("setpoint_y", default_setpoint_y)
 
-
         self.targetfilter=["bottle"]
         # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
         self._register_property("targetfilter", ",".join(self.targetfilter))
-
-
-        
-
         self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=default_kp)
-
-    
 
     def _property_changed_callback(self, name):
         if name=="kp":
