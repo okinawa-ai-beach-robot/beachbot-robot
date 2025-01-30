@@ -8,14 +8,19 @@ from beachbot.control.robotcontroller import RobotController, BoxDef
 from beachbot.ai.debrisdetector import DebrisDetector
 from beachbot.utils.timer import Timer
 from beachbot.utils.videowriteropencv import VideoWriterOpenCV
+from beachbot.utils.properties import HasProperties
 
 
-class RobotInterface(object):
+class RobotInterface(HasProperties):
     class CAMERATYPE(Enum):
         FRONT = 1
         GRIPPER = 2
 
     def __init__(self):
+        super().__init__()
+
+
+        self.debug=False
         self.cameradevices={}
         self.platform=None
         self.arm=None
@@ -37,6 +42,15 @@ class RobotInterface(object):
         self.buffered_camera_image_boxes={}
         self.buffered_camera_lock = threading.Lock()
 
+    def refresh_properties(self):
+        super().clear_properties()
+        self.register_property("debug") 
+        # Here we can add more robot properties
+        if self.controller is not None:
+            self.register_child_properties(self.controller, "controller")
+        if self.detector is not None:
+            self.register_child_properties(self.detector, "detector")
+
 
 
 
@@ -52,6 +66,7 @@ class RobotInterface(object):
     def set_detector(self, detector : DebrisDetector = None):
         with self.detector_lock:
             self.detector = detector
+            self.refresh_properties()
 
     def start_recording(self):
         with self.video_writer_lock:
@@ -77,6 +92,7 @@ class RobotInterface(object):
     def set_controller(self, controller : RobotController = None):
         with self.controller_lock: 
             self.controller = controller
+            self.refresh_properties()
 
     def _run_vision_loop(self):
         while self.vision_thread is not None:
@@ -84,7 +100,13 @@ class RobotInterface(object):
                 which_cam = self.CAMERATYPE.FRONT
 
                 # get frame
-                frame = self.get_camera_image(which=which_cam)
+                frame = None
+                try:
+                    frame = self.get_camera_image(which=which_cam)
+                except Exception as ex:
+                    logger.error(ex)
+                    logger.error("Repeated errors indicate a bad camera connection")
+
                 if frame is not None:
                     class_ids=[]
                     confidences=[]
