@@ -47,31 +47,32 @@ class ApproachDebris(RobotController):
             super()._property_changed_callback(name)
 
     def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False):
-        trash_to_follow : BoxDef = None
+        if detections is None:
+            return
 
-        for detected in detections:
-            # Detected trash
-            # Todo select best trash in case multiple detections, for now, take first one:
-            if self.targetfilter is None or detected.class_name in self.targetfilter:
-                trash_to_follow = detected
+        # trash_to_follow is a list of detections with easy sorting based on BoxDef.confidence
+        # It should only contain objects that match the targetfilter
+        trash_to_follow: List[BoxDef] = []
+        for det in detections:
+            if det.class_name in self.targetfilter:
+                trash_to_follow.append(det)
 
-        if trash_to_follow:
+        if trash_to_follow is not None and len(trash_to_follow) > 0:
+            # sort by confidence
+            trash_to_follow.sort(key=lambda x: x.confidence, reverse=True)
             # approach trash
-            trash_x = trash_to_follow.left+trash_to_follow.w/2
-            trash_y = 1.0 - (trash_to_follow.top+trash_to_follow.h/2) # 0 is bottom, 1 is top
+            best_match = trash_to_follow[0]
+            trash_x = best_match.left+best_match.w/2
+            trash_y = 1.0 - (best_match.top+best_match.h/2) # 0 is bottom, 1 is top
 
             if debug:
                 print("trash position:", trash_x, trash_y)
 
             dir_command = self.ctrl.get_output(trash_x, trash_y)
             if debug:
-                print("dir_command:",dir_command)
+                print("dir_command:", dir_command)
             robot.set_target_velocity(-dir_command[0], -dir_command[1])
-
-
 
         else:
             # Do random movements to find a trash:
             pass
-        
-        
