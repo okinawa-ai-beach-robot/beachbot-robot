@@ -158,10 +158,15 @@ def toggle_detection(doit, ai_model=Yolo5TorchHub):
     if doit:
         robot.set_detector(ai_model())
         # Set Inital confidence threshold for object detector
-        robot.get_detector().conf_threshold=0.3
+        try:
+            robot.set_property("detector.conf_threshold", 0.3)
+        except ValueError:
+            logger.warning("Current detector does not support confidence thresholding")
+
     else:
         robot.set_detector(None)
     ui_model_info.refresh(robot)
+    ui_config_panel.refresh()
 
 def blobcfg():
     toggle_detection(True)
@@ -171,24 +176,24 @@ def blobcfg():
 
 @ui.refreshable
 def ui_config_panel(robot : RobotInterface) -> None:
-    controller = robot.get_controller()
-    if controller is not None:
-        for prop in controller.list_property_names():    
-            value = controller.get_property(prop)
-            value_bounds = controller.get_property_bounds(value)
+    # TODO with ui.scroll_area().classes('w-full h-full border'):
+    if robot is not None:
+        for prop in robot.list_property_names():    
+            value = robot.get_property(prop)
+            value_bounds = robot.get_property_bounds(prop)
             with ui.row().classes("w-full justify-between no-wrap"):
                 if type(value)==str:
-                        ui.label(prop+":")
-                        ui.input(label='prop', placeholder='enter string', value=value, on_change=lambda e, p=prop: robot.get_controller().set_property(p, e.value))
+                        ui.label("robot."+prop+":")
+                        ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
                 elif type(value)==float:
                         if value_bounds is not None and value_bounds[0] is not None and value_bounds[1] is not None:
-                            ui.label(prop+":")
-                            ui.slider(min=value_bounds[0], max=value_bounds[1], step=(value_bounds[1]-value_bounds[0])/255.0, value=value, on_change=lambda e, p=prop: robot.get_controller().set_property(p, e.value))
+                            ui.label("robot."+prop+":")
+                            ui.slider(min=value_bounds[0], max=value_bounds[1], step=(value_bounds[1]-value_bounds[0])/255.0, value=value, on_change=lambda e, p=prop: robot.set_property(p, float(e.value))).props('label-always')
                         else:
-                            ui.label(prop+":")
-                            ui.number(label=prop, value=value, step=0.1, format='%.2f', on_change=lambda e, p=prop: robot.get_controller().set_property(p, e.value))
+                            ui.label("robot."+prop+":")
+                            ui.number(label="robot."+prop, value=value, step=0.1, format='%.2f', on_change=lambda e, p=prop: robot.set_property(p, float(e.value)))
                 elif type(value)==bool:
-                        ui.checkbox(prop, value=value, on_change=lambda e, p=prop: robot.get_controller().set_property(p, e.value))
+                        ui.checkbox("robot."+prop, value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
 
 
 
@@ -197,7 +202,8 @@ def toggle_control(doit):
         robot.set_controller(MyController())
         ui_config_panel.refresh(robot)
     else:
-        controller=None
+        robot.set_controller(None)
+        ui_config_panel.refresh(robot)
 
 # def update_kp(new_kp):
 #     if controller is not None:
@@ -321,7 +327,7 @@ with ui.tabs().classes("w-full") as tabs:
     # tabs.on('click', lambda s: reload_files())
     one = ui.tab(tab_names[0])
     two = ui.tab(tab_names[1])
-tab_panel = ui.tab_panels(tabs, value=two).classes("w-full")
+tab_panel = ui.tab_panels(tabs, value=one).classes("w-full")
 tab_panel.on_value_change(tab_select_event)
 with tab_panel:
     with ui.tab_panel(one):
@@ -349,7 +355,7 @@ with tab_panel:
             with ui.dropdown_button("System", auto_close=True):
                 ui.item("Exit Server", on_click=app.shutdown)
                 ui.item("Shut Down", on_click=sys_shutdown)
-        with ui.splitter().classes("w-full") as splitter:
+        with ui.splitter().classes("w-full h-full") as splitter:
             with splitter.before:
                 ui.label("Robot Control Panel")
                 with ui.tabs().classes("w-full") as tabs_ctrl:
@@ -358,7 +364,7 @@ with tab_panel:
                     three_ctrl = ui.tab("Arm Cart")
                     four_ctrl = ui.tab("Settings")
                 tab_panel_ctrl = ui.tab_panels(tabs_ctrl, value=one_ctrl).classes("w-full")
-                with tab_panel_ctrl:
+                with tab_panel_ctrl.classes("w-full h-full"):
                     with ui.tab_panel(one_ctrl):
                         ui.add_head_html(
                                     """
@@ -399,7 +405,7 @@ with tab_panel:
                         with ui.row().classes("w-full justify-between no-wrap"):
                             ui.label("r:")
                             cart_r_slider = ui.slider(min=-45, max=45, step=1.0, value=0.0, on_change=lambda x: arm_action_cartesian()).props('label')
-                    with ui.tab_panel(four_ctrl):
+                    with ui.tab_panel(four_ctrl).classes('w-full h-full border'):
                         ui_config_panel(robot)
 
             with splitter.after:
