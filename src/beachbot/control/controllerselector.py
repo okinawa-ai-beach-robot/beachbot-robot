@@ -19,46 +19,26 @@ class ControllerSelector(RobotController):
 
         # Collect all properties of used controllers and add to this class
         for ctrl_name in self.controllers.keys():
-            ctrlcls = self.controllers[ctrl_name]
-            for ctrl_name_property in ctrlcls.list_property_names():
-                prop_default_val = ctrlcls.get_property(ctrl_name_property)
-                prop_bounds = ctrlcls.get_property_bounds(ctrl_name_property)
-                prop_min = None
-                prop_max = None
-                if prop_bounds is not None:
-                    prop_min, prop_max = prop_bounds
-                self._register_property(ctrl_name + "." + ctrl_name_property, prop_default_val, max_value=prop_max, min_value=prop_min)
-
-
-
-    def set_property(self, name:str, value:Union[bool, float, str]):
-        if "." in name:
-            # forward property change to children ....
-            ctrlname, propname=  name.split(".", 1)
-            if ctrlname in self.controllers:
-                self.controllers[ctrlname].set_property(propname, value)
-            else:
-                raise ValueError(f"Controller module {ctrlname} not known, can not set property {propname}")
-        else:
-            super().set_property(name, value)
-
-    def get_property(self,name:str) -> Union[bool, float, str, None]:
-        if "." in name:
-            # retrieve property values from children ....
-            ctrlname, propname=  name.split(".", 1)
-            if ctrlname in self.controllers:
-                return self.controllers[ctrlname].get_property(propname)
-            else:
-                raise ValueError(f"Controller module {ctrlname} not known, can not get property {propname}")
-        else:
-            return super().get_property(name)
+            self.register_child_properties(class_instance=self.controllers[ctrl_name],class_name=ctrl_name)
 
 
 
 
 
-    def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False):
+
+
+
+
+    def update(self, robot: RobotInterface, detections: List[BoxDef]=None):
         if self.controller is self.controllers["approach"]:
             # check if approachDebris is done
-            if self.controller.update(robot, detections, debug):
+            if self.controller.update(robot, detections):
                 self.controller = self.controllers["pickup"]
+        elif self.controller is self.controllers["pickup"]:
+            # Pick-up trash
+            # TODO what to do afterwards?
+            self.controller.update(robot, detections)
+            self.controller=None # Stop afterwards
+
+
+            
