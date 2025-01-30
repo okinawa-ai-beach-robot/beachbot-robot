@@ -13,6 +13,8 @@ class ApproachDebris(RobotController):
         default_setpoint_x = 0.5
         default_setpoint_y = 0.25
         detection_threshold = 0.5
+        # Used for a basic hysteresis filter
+        self.missing_target_count = 0
 
         self._register_property("kp", default_kp)
         self._register_property("setpoint_x", default_setpoint_x)
@@ -62,6 +64,7 @@ class ApproachDebris(RobotController):
                 trash_to_follow.append(det)
 
         if trash_to_follow is not None and len(trash_to_follow) > 0:
+            self.missing_target_count = 0
             # sort by confidence
             trash_to_follow.sort(key=lambda x: x.confidence, reverse=True)
             # approach trash
@@ -84,6 +87,9 @@ class ApproachDebris(RobotController):
                 return True
 
         else:
-            robot.set_target_velocity(50, 0)
+            self.missing_target_count += 1
+            if self.missing_target_count > 10:
+                robot.platform.motor_left.change_speed(50)
+                robot.platform.motor_right.change_speed(-50)
 
         return False
