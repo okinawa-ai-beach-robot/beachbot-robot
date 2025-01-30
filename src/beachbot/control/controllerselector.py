@@ -15,6 +15,7 @@ class ControllerSelector(RobotController):
             #....
             # add here list of used sub-controller modules ... 
         }
+        self.controller = self.controllers["approach"]
 
         # Collect all properties of used controllers and add to this class
         for ctrl_name in self.controllers.keys():
@@ -57,15 +58,7 @@ class ControllerSelector(RobotController):
 
 
     def update(self, robot: RobotInterface, detections: List[BoxDef]=None, debug=False):
-
-        # TODO add/modify logic to select one of the available controllers
-        current_controller : RobotController = self.controllers["approach"]
-        # if approached to object ... then ... TODO
-        # ... current_controller : RobotController = self.controllers["pickup"]
-
-
-        # after selection of controller, forward data
-        current_controller.update(robot, detections)
-
-        
-        
+        if self.controller is self.controllers["approach"]:
+            # check if approachDebris is done
+            if self.controller.update(robot, detections, debug):
+                self.controller = self.controllers["pickup"]
