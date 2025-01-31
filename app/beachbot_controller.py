@@ -210,7 +210,7 @@ def toggle_control(doit):
 #         controller.ctrl.kp=kp_slider.value
 
 def toggle_recoding(doit):
-    global video_is_recording, videowriter
+    global video_is_recording
     if doit and not robot.is_recording():
         fname = robot.start_recording()
         print("Start recording into file", fname)
@@ -450,10 +450,7 @@ async def cleanup() -> None:
 
     print("Exit, cleaning up...")
     joystick_end()
-    if videowriter is not None:
-        videowriter.close()
     robot.cleanup()
-    # sys.exit(0)
 
 
 app.on_shutdown(cleanup)

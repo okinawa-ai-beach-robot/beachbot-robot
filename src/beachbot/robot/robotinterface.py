@@ -68,12 +68,13 @@ class RobotInterface(HasProperties):
             self.detector = detector
             self.refresh_properties()
 
-    def start_recording(self):
+    def start_recording(self, camera_device : CAMERATYPE = CAMERATYPE.FRONT):
         with self.video_writer_lock:
             if self.video_writer is not None:
                 self.video_writer.close()
-            capture_width, capture_height = self.cameradevices[RobotInterface.CAMERATYPE.FRONT].get_size()
+            capture_width, capture_height = self.cameradevices[camera_device].get_size()
             self.video_writer = VideoWriterOpenCV(None, fps=self.ctrl_loop_target_hz, capture_width=capture_width, capture_height=capture_height)
+            self.video_writer.start_recording(self.cameradevices[camera_device])
             return self.video_writer.filename
     
     def stop_recording(self):
@@ -205,6 +206,9 @@ class RobotInterface(HasProperties):
     def cleanup(self):
         self.arm.cleanup()
         self.platform.cleanup()
+        with self.video_writer_lock:
+            if self.video_writer is not None:
+                self.video_writer.close()
         self.get_camera_image(None)
 
 

@@ -19,7 +19,8 @@ class VideoWriterOpenCV(threading.Thread):
         if filename is None:
             basepath = VideoWriterOpenCV.get_base_path()
             filename = basepath + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        if "." not in filename:
+        
+        if "." not in filename.rsplit(os.path.sep, 1)[-1]:
             filename += ".mp4"
 
         fourcc = cv2.VideoWriter_fourcc(*"h264")
