@@ -24,9 +24,9 @@ class ControllerSelector(RobotController):
         if self.controller is self.controllers["approach"]:
             # check if approachDebris is done
             if self.controller.update(robot, detections):
+                logger.info("approachDebris done, switching to pickup...")
                 self.controller = self.controllers["pickup"]
         elif self.controller is self.controllers["pickup"]:
-            # Pick-up trash
-            # TODO what to do afterwards?
-            self.controller.update(robot, detections)
-            self.controller = None  # Stop afterwards
+            if self.controller.update(robot, detections):
+                logger.info("pickup done, switching to approachDebris...")
+                self.controller = self.controllers["approach"]

@@ -1,0 +1,4 @@
+LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python sciencefestival2025.py 
+
+ERROR: File "setup.py" not found. Directory cannot be installed in editable mode: /home/beachbot/src/robot
+(A "pyproject.toml" file was found, but editable mode currently requires a setup.py based build.)
