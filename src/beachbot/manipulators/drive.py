@@ -36,7 +36,6 @@ class DifferentialDrive(threading.Thread):
         self._current_velocity = 0
 
         self._max_rate_of_change = 100
-        self._max_rate_of_change = 100
 
         self._motor_left_speed = 0
         self._motor_right_speed = 0

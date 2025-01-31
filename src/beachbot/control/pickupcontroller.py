@@ -13,4 +13,5 @@ class PickupController(RobotController):
         robot.arm.pickup()
         logger.info("tossing")
         robot.arm.toss()
+        robot.arm.go_home()
         return True

@@ -14,10 +14,11 @@ class ApproachDebris(RobotController):
         
         # Used for a basic hysteresis filter
         self.missing_target_count = 0
+        self.target_arrival_frames = 0
 
-        default_kp = 100.0
+        default_kp = 160.0
         default_setpoint_x = 0.5
-        default_setpoint_y = 0.25
+        default_setpoint_y = 0.5
 
         self.output_enabled=False
         self.register_property("output_enabled")
@@ -28,11 +29,11 @@ class ApproachDebris(RobotController):
 
         self.detection_threshold = 0.5
         self.register_property("detection_threshold")
-
+        self.pid_error_threshold = 0.05
         self.pid_debug=False
         self.register_property("pid_debug")
 
-        self.targetfilter=["bottle"]
+        self.targetfilter=["cup","toilet"]
         # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
         self.register_property("targetfilter", ",".join(self.targetfilter))
         self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=default_kp)
@@ -93,10 +94,12 @@ class ApproachDebris(RobotController):
             else:
                 robot.set_target_velocity(0,0)
 
-            if abs(dir_error_x) < 0.1 and abs(dir_error_y) < 0.1:
-                robot.set_target_velocity(0, 0)
-                logger.info("ApproachDebris: Target reached")
-                return True
+            if abs(dir_error_x) < self.pid_error_threshold and abs(dir_error_y) < self.pid_error_threshold:
+                self.target_arrival_frames += 1
+                if self.target_arrival_frames > 20:
+                    robot.set_target_velocity(0, 0)
+                    logger.info("ApproachDebris: Target reached")
+                    return True
 
         else:
             self.missing_target_count += 1
@@ -105,7 +108,7 @@ class ApproachDebris(RobotController):
                 # But requires a return value more than True/False, maybe string? or other way
                 # for the controllerseelctor to check if (1) approaching, (2) reached, (3) Lost
                 if self.output_enabled:
-                    robot.set_target_velocity(angular_velocity=50, velocity=0)
+                    robot.set_target_velocity(angular_velocity=0, velocity=0)
 
 
         return False
