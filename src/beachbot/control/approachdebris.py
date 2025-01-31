@@ -32,10 +32,7 @@ class ApproachDebris(RobotController):
         self.pid_debug=False
         self.register_property("pid_debug")
 
-
-        
-
-        self.targetfilter=["bottle", "cup", "trash_easy", "sports ball", "blue_blob"]
+        self.targetfilter=["bottle"]
         # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
         self.register_property("targetfilter", ",".join(self.targetfilter))
         self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=default_kp)
