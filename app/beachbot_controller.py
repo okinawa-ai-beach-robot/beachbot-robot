@@ -34,6 +34,7 @@ import signal
 #import beachbot.sensors
 import beachbot 
 from beachbot.config import config
+from beachbot.assets import get_asset_path
 
 from beachbot.config import logger
 from beachbot.robot.robotinterface import RobotInterface
@@ -458,5 +459,4 @@ app.on_shutdown(cleanup)
 # because otherwise they will keep requesting images which lead to unfinished subprocesses blocking the shutdown.
 signal.signal(signal.SIGINT, handle_sigint)
 
-
-ui.run(reload=False, port=8080, show=False)
+ui.run(reload=False, port=8080, show=False, title="Beachbot", favicon=str(get_asset_path() / "beachbot_128x128.png"))
