@@ -10,6 +10,7 @@ class BlobDetectorOpenCV(DebrisDetector):
     """
 
     def __init__(self, model_file=None, use_accel=True, minArea = 1000, maxArea = 200000) -> None:
+        super().__init__(None)
         params = cv2.SimpleBlobDetector_Params()
         params.filterByCircularity = False
         params.filterByConvexity = False
@@ -36,7 +37,7 @@ class BlobDetectorOpenCV(DebrisDetector):
                         "others_traverable",
                         "trash_easy",
                         "trash_hard",
-                        "blue_dot"
+                        "blue_blob"
                         ]
     
 
@@ -83,7 +84,7 @@ class BlobDetectorOpenCV(DebrisDetector):
                 print("Box from blob is:", left, top, width, height)
             bbox = np.array([left, top, width, height])
             result_boxes.append(bbox)
-            result_class_ids.append(self.list_classes.index("blue_dot"))
+            result_class_ids.append(self.list_classes.index("blue_blob"))
             result_confidences.append(1.0)
 
 
