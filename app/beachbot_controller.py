@@ -33,11 +33,11 @@ import signal
 #from beachbot.manipulators import Motor, DifferentialDrive
 #import beachbot.sensors
 import beachbot 
-from beachbot.config import config
+from beachbot.config import config, logger
+import logging
 from beachbot.assets import get_asset_path
 from beachbot.utils.system import MonitoredStdStreams
 
-from beachbot.config import logger
 from beachbot.robot.robotinterface import RobotInterface
 
 from beachbot.ai.yolov5_torch_hub import Yolo5TorchHub
@@ -83,7 +83,7 @@ target_obj="chair"
 
 tab_names = ["Control", "Recordings"]
 
-
+logger.setLevel(logging.INFO)
 if args.sim:
     logger.info("Using simulation as --sim flag is set")
     from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1

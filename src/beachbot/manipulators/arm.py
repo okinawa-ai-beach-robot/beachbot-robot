@@ -453,8 +453,8 @@ class Arm:
                 return True
             if time() - t_start > timeout:
                 return False
-            logger.info("Distance to target: " + str(dist))
-            logger.info("Error in joint angles: " + str(qs - qs_target))
+            logger.debug("Distance to target: " + str(dist))
+            logger.debug("Error in joint angles: " + str(qs - qs_target))
             sleep(polling_interval)
 
     def pickup(self, speed_factor=20):
