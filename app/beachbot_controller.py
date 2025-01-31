@@ -35,6 +35,7 @@ import signal
 import beachbot 
 from beachbot.config import config
 from beachbot.assets import get_asset_path
+from beachbot.utils.system import MonitoredStdStreams
 
 from beachbot.config import logger
 from beachbot.robot.robotinterface import RobotInterface
@@ -96,7 +97,7 @@ robot.start()
 time.sleep(3)
 
 
-
+live_update_timer = None
 
 
 
@@ -152,12 +153,60 @@ def ui_model_info(robot : RobotInterface):
     else:
          ui.label("Model: None")
 
-def toggle_detection(doit, ai_model=Yolo5TorchHub):
-    global detector, video_image
+
+
+# with ui.dialog() as dialog, ui.card():
+#     ui.label('Hello world!')
+#     ui.button('Close', on_click=dialog.close)
+
+
+# class UILoadDialog(ui.dialog):
+#     def __init__(self):
+#         super().__init__()
+#         self.msg="none\n"
+#         #self.updateui()
+
+#     def updateui(self):
+#         with ui.card():
+#             ui.textarea(self.msg)
+#             ui.button('Close', on_click=self.close)
+
+#     def show_me(self):
+#         self.open()
+
+
+# diag = UILoadDialog()
+
+async def toggle_detection(doit, ai_model=Yolo5TorchHub):
+    global detector, video_image, diag
     video_image.content = ""
     print("Detection:", doit)
     if doit:
-        robot.set_detector(ai_model())
+        # def f(s, file=sys.stdout):
+        #     print("redirected", s, file=file)
+        #     print("redirect end", file=file)
+        # mys=MonitoredStream(sys.stdout, f)
+
+
+        #diag = UILoadDialog()
+        #diag.show_me()
+        msg = ""
+
+        def f_std(s, msg):
+            print(s)
+            msg += s
+            #loadingdialog.refresh(msg)
+
+        def f_err(s, msg):
+            print(s)
+            msg += s
+            #loadingdialog.refresh(msg)
+
+        with MonitoredStdStreams(lambda s: f_std(s, msg),lambda s: f_err(s, msg)): # 
+            print("test")
+            robot.set_detector(ai_model())
+
+        
         # Set Inital confidence threshold for object detector
         try:
             robot.set_property("detector.conf_threshold", 0.3)
@@ -420,43 +469,37 @@ with tab_panel:
 
 reload_files()
 
-# TODO add, only timing when view is on preview!!!, add loop to robot class and do only visualization here in this class
+# Start image view update timer:
 live_update_timer = ui.timer(
     interval=0.5, callback=lambda: video_image.set_source(f"/video/frame?{time.time()}")
 )
 
 
-# media.mkdir(exist_ok=True)
-# r = requests.get('https://cdn.coverr.co/videos/coverr-cloudy-sky-2765/1080p.mp4')
-# (media  / 'clouds.mp4').write_bytes(r.content)
 
 
+# disconnect clients (websocket) form server
 async def disconnect() -> None:
     """Disconnect all clients from current running server."""
     for client_id in Client.instances:
         await core.sio.disconnect(client_id)
 
 
+# Setup system handler for shutdown
 def handle_sigint(signum, frame) -> None:
-    # `disconnect` is async, so it must be called from the event loop; we use `ui.timer` to do so.
-    ui.timer(0.1, disconnect, once=True)
-    # Delay the default handler to allow the disconnect to complete.
-    ui.timer(1, lambda: signal.default_int_handler(signum, frame), once=True)
+    app.shutdown()
+# Catch Ctrl+C for shutdown
+signal.signal(signal.SIGINT, handle_sigint)
 
-
+# Cleanup routins on app shutdown
 async def cleanup() -> None:
-    # This prevents ugly stack traces when auto-reloading on code change,
-    # because otherwise disconnected clients try to reconnect to the newly started server.
+    # disconnect clients when the app is stopped with Ctrl+C
     await disconnect()
 
     print("Exit, cleaning up...")
     joystick_end()
     robot.cleanup()
-
-
 app.on_shutdown(cleanup)
-# We also need to disconnect clients when the app is stopped with Ctrl+C,
-# because otherwise they will keep requesting images which lead to unfinished subprocesses blocking the shutdown.
-signal.signal(signal.SIGINT, handle_sigint)
 
+
+# Start app
 ui.run(reload=False, port=8080, show=False, title="Beachbot", favicon=str(get_asset_path() / "beachbot_128x128.png"))
