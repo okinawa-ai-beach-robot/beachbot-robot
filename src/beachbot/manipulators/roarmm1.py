@@ -119,7 +119,10 @@ class RoArmM1(Arm):
                 "joint number range is 1 to 5 and value range is percent x10 (0-1000)"
             )
 
-    def set_joint_targets(self, qs):
+    def set_joint_targets(self, qs, offsets=None):
+        if offsets is not None:
+            for i in range(5):
+                qs[i] = qs[i] + offsets[i]
         self.qs_target = qs
         percent = self.denormalize_gripper_angle(qs[4])
 

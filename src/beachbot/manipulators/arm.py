@@ -287,8 +287,7 @@ class Arm:
             speed_factor: scaling factor to divide ts by in order to speed up playback
         """
         # Set initial position and wait
-        offsets=[0, 0, 1.2, 0, 0]
-        self.set_joint_targets(qs[0] + offsets)
+        self.set_joint_targets(qs[0], offsets=[0, 0, 1.2, 0, 0])
         self.wait_joint_target_arrival()
         ts = ts / speed_factor
         ts_start = time()
