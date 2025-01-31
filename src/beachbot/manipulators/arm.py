@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import math
 from beachbot.config import config, logger
+from beachbot.assets import get_asset_path
 import threading
 
 
@@ -62,7 +63,7 @@ class Arm:
         self._status_lock = threading.Lock()
         self._joint_changed = threading.Condition()
 
-        asset_path = Path(__file__).parent.parent / "assets"
+        asset_path = get_asset_path()
         pickup_path = asset_path / "pickup.npz"
         toss_path = asset_path / "toss.npz"
         self.pickup_trajectory = Trajectory.from_file(pickup_path)
