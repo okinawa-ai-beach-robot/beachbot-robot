@@ -155,9 +155,10 @@ def ui_model_info(robot : RobotInterface):
 
 
 
-# with ui.dialog() as dialog, ui.card():
-#     ui.label('Hello world!')
-#     ui.button('Close', on_click=dialog.close)
+# with ui.dialog() as dialog:
+#     with ui.card():
+#         ui.label('Hello world!')
+#         ui.button('Close', on_click=dialog.close)
 
 
 # class UILoadDialog(ui.dialog):
@@ -187,24 +188,23 @@ async def toggle_detection(doit, ai_model=Yolo5TorchHub):
         #     print("redirect end", file=file)
         # mys=MonitoredStream(sys.stdout, f)
 
+        # TODO jfq
+        # #diag = UILoadDialog()
+        # #diag.show_me()
+        # msg = ""
 
-        #diag = UILoadDialog()
-        #diag.show_me()
-        msg = ""
+        # def f_std(s, msg):
+        #     print(s)
+        #     msg += s
+        #     #loadingdialog.refresh(msg)
 
-        def f_std(s, msg):
-            print(s)
-            msg += s
-            #loadingdialog.refresh(msg)
+        # def f_err(s, msg):
+        #     print(s)
+        #     msg += s
+        #     #loadingdialog.refresh(msg)
 
-        def f_err(s, msg):
-            print(s)
-            msg += s
-            #loadingdialog.refresh(msg)
-
-        with MonitoredStdStreams(lambda s: f_std(s, msg),lambda s: f_err(s, msg)): # 
-            print("test")
-            robot.set_detector(ai_model())
+        #with MonitoredStdStreams(lambda s: f_std(s, msg),lambda s: f_err(s, msg)): # 
+        robot.set_detector(ai_model())
 
         
         # Set Inital confidence threshold for object detector
