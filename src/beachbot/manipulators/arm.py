@@ -51,9 +51,9 @@ class Arm:
         self.q_home = [
             180.0,
             -12,
-            100.2832031,
+            70,
             45.0,
-            self.gripper_open,
+            0.0,
         ]  # Joint angle home position
 
         self.qs = self.q_home
