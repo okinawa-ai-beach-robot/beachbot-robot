@@ -31,4 +31,7 @@ class VrepMotorSim():
              speed -= 15
 
         self.vrep_sim.setJointTargetVelocity(self._motor_id, self._max_velocity * speed / 100)
+
+    def cleanup(self):
+         pass
         
