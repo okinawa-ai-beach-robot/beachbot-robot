@@ -207,7 +207,7 @@ async def toggle_detection(doit, ai_model=Yolo5TorchHub):
         robot.set_detector(ai_model())
 
         
-        # Set Inital confidence threshold for object detector
+        # Set Initial confidence threshold for object detector
         try:
             robot.set_property("detector.conf_threshold", 0.3)
         except ValueError:
@@ -227,11 +227,32 @@ def blobcfg():
 @ui.refreshable
 def ui_config_panel(robot : RobotInterface) -> None:
     # TODO with ui.scroll_area().classes('w-full h-full border'):
+
     if robot is not None:
+        prop_classes={}
         for prop in robot.list_property_names():    
             value = robot.get_property(prop)
             value_bounds = robot.get_property_bounds(prop)
-            with ui.row().classes("w-full justify-between no-wrap"):
+            if "." in prop:
+                value_subclass = prop.rsplit(".", 1)[0]
+            else:
+                value_subclass = None
+            
+
+            if value_subclass:
+                if value_subclass in prop_classes:
+                    targetelement_parent = prop_classes[value_subclass]
+                else:
+                    targetelement_parent =  ui.expansion("robot."+value_subclass+':', icon='tune').classes("w-full justify-between no-wrap")
+                    prop_classes[value_subclass] = targetelement_parent
+
+                with targetelement_parent:
+                    targetelement = ui.row().classes("w-full justify-between no-wrap")
+            else:
+                targetelement = ui.row().classes("w-full justify-between no-wrap")
+
+
+            with targetelement:
                 if type(value)==str:
                         ui.label("robot."+prop+":")
                         ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
@@ -243,7 +264,8 @@ def ui_config_panel(robot : RobotInterface) -> None:
                             ui.label("robot."+prop+":")
                             ui.number(label="robot."+prop, value=value, step=0.1, format='%.2f', on_change=lambda e, p=prop: robot.set_property(p, float(e.value)))
                 elif type(value)==bool:
-                        ui.checkbox("robot."+prop, value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
+                        ui.label("robot."+prop+":")
+                        ui.checkbox(value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
 
 
 
