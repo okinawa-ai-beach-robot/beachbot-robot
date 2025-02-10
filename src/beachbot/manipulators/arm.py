@@ -152,8 +152,15 @@ class Arm:
         with self._status_lock:
             return self.qs_target.copy()
 
-    def set_joint_targets(self):
+    def set_joint_targets(self, qs, offsets=None):
         """
+        Input
+        qs: target joint angles
+        offsets: TODO offset only applied on real robot arm RoarmM1, effective target is qs+offsets, otherwise ignored
+
+        Send target joint angles to servo motors.
+        Non-blocking
+        Please note: Depending on load condition and torque limits, reached joint angles may differ.
         Overridden by child classes as API differs greatly
         """
         pass

@@ -112,7 +112,7 @@ class VrepRoArmM1Sim(Arm):
         return res
 
     @vrep
-    def set_joint_targets(self, qs, do_offsetcompensation=True):
+    def set_joint_targets(self, qs, do_offsetcompensation=True, offsets=None):
         self.qs_target = qs
         for i in range(4):
             if do_offsetcompensation:
