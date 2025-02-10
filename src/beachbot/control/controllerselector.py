@@ -1,8 +1,10 @@
 from typing import List
 from beachbot.control.robotcontroller import RobotController, BoxDef
+from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.approachdebris import ApproachDebris
 from beachbot.control.pickupcontroller import PickupController
+from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.config import logger
 
 
@@ -23,10 +25,13 @@ class ControllerSelector(RobotController):
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
         if self.controller is self.controllers["approach"]:
             # check if approachDebris is done
-            if self.controller.update(robot, detections):
+            if self.controller.update(robot, detections) == RESULT.SUCCESS:
                 logger.info("approachDebris done, switching to pickup...")
                 self.controller = self.controllers["pickup"]
         elif self.controller is self.controllers["pickup"]:
-            if self.controller.update(robot, detections):
+            if self.controller.update(robot, detections) == RESULT.SUCCESS:
                 logger.info("pickup done, switching to approachDebris...")
                 self.controller = self.controllers["approach"]
+
+        return RESULT.BUSY
+

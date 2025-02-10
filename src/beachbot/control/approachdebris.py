@@ -2,6 +2,7 @@ import math
 from typing import List
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.robotcontroller import RobotController, BoxDef
+from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.utils.controllercollection import PIDController
 from beachbot.config import logger
 
@@ -99,16 +100,16 @@ class ApproachDebris(RobotController):
                 if self.target_arrival_frames > 20:
                     robot.set_target_velocity(0, 0)
                     logger.info("ApproachDebris: Target reached")
-                    return True
+                    return RESULT.SUCCESS
 
         else:
             self.missing_target_count += 1
             if self.missing_target_count > 10:
                 # Rotate robot, TODO add a 3rd controller for "random seach"
-                # But requires a return value more than True/False, maybe string? or other way
-                # for the controllerseelctor to check if (1) approaching, (2) reached, (3) Lost
+                # TODO return RESULT.FAILURE to indicate controller selector to handle the situation appropriately
+                # for the controllerselector to check if (1) approaching, (2) reached, (3) Lost
                 if self.output_enabled:
                     robot.set_target_velocity(angular_velocity=0, velocity=0)
 
 
-        return False
+        return RESULT.BUSY
