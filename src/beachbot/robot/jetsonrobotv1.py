@@ -6,6 +6,10 @@ from ..manipulators.jetsonmotor import JetsonMotor
 from ..manipulators.roarmm1 import RoArmM1_Custom3FingerGripper
 from .robotinterface import RobotInterface
 from beachbot.config import logger
+from beachbot.manipulators.motor import Motor
+from beachbot.manipulators.drive import DriveSystem
+from beachbot.manipulators.arm import Arm
+
 
 try:
     import Jetson.GPIO as GPIO
@@ -30,12 +34,12 @@ class JetsonRobotV1(RobotInterface):
         GPIO.setmode(GPIO.BOARD)
 
         # Motor Controller Setup:
-        motor_left = JetsonMotor("motor_left", pwm_pins[0], gpio_pins[0], gpio_pins[1], _frequency_hz)
-        motor_right = JetsonMotor("motor_right", pwm_pins[1], gpio_pins[2], gpio_pins[3], _frequency_hz)
-        self.platform = DifferentialDrive(motor_left, motor_right)
+        motor_left : Motor = JetsonMotor("motor_left", pwm_pins[0], gpio_pins[0], gpio_pins[1], _frequency_hz)
+        motor_right : Motor = JetsonMotor("motor_right", pwm_pins[1], gpio_pins[2], gpio_pins[3], _frequency_hz)
+        self.platform : DriveSystem = DifferentialDrive(motor_left, motor_right)
 
         # Init Robot arm, gripper limits [q_open, q_close] must be adjusted to gripper hardware!
-        self.arm = RoArmM1_Custom3FingerGripper()
+        self.arm : arm = RoArmM1_Custom3FingerGripper()
 
     def stop(self):
         print("TODO: Stop robot")

@@ -9,6 +9,8 @@ from beachbot.ai.debrisdetector import DebrisDetector
 from beachbot.utils.timer import Timer
 from beachbot.utils.videowriteropencv import VideoWriterOpenCV
 from beachbot.utils.properties import HasProperties
+from beachbot.manipulators.arm import Arm
+from beachbot.manipulators.drive import DriveSystem
 
 
 class RobotInterface(HasProperties):
@@ -22,8 +24,8 @@ class RobotInterface(HasProperties):
 
         self.debug=False
         self.cameradevices={}
-        self.platform=None
-        self.arm=None
+        self.platform : DriveSystem=None
+        self.arm : Arm=None
 
         self.controller=None
         self.controller_lock = threading.Lock()

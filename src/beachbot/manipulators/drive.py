@@ -1,5 +1,6 @@
 import time
 from beachbot.config import logger
+from beachbot.manipulators.motor import Motor
 import threading
 
 
@@ -9,16 +10,20 @@ def sign(x):
 def bounded(val, mi=0, ma=1):
     return min(ma, max(val, mi))
 
+class DriveSystem():
+    def __init__(self):
+        super().__init__()
 
-class DifferentialDrive(threading.Thread):
-    def __init__(self, motor_left, motor_right, update_freq=100, command_timeout=1.0) -> None:
+class DifferentialDrive(DriveSystem, threading.Thread):
+    def __init__(self, motor_left:Motor, motor_right:Motor, update_freq=100, command_timeout=1.0) -> None:
         # Init superclass thread
         super().__init__()
+
         # Do not block on exit (TODO)
         self.daemon = True
 
-        self.motor_left = motor_left
-        self.motor_right = motor_right
+        self.motor_left : Motor = motor_left
+        self.motor_right : Motor = motor_right
         self.update_freq = update_freq
         self._is_running = False
         self.motor_left = motor_left
@@ -59,10 +64,7 @@ class DifferentialDrive(threading.Thread):
         self.motor_right.change_speed(0)
         self.motor_left.cleanup()
         self.motor_right.cleanup()
-        try:
-            GPIO.cleanup()
-        except Exception as ex:
-            logger.error("GPIO cleanup failed (bug in GPIO?)")
+
 
     def run(self):
         self._is_running = True

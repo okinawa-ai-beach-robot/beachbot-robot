@@ -9,6 +9,8 @@ from ..utils.vrepsimulation import vrep
 from coppeliasim_zmqremoteapi_client import *
 from pathlib import Path
 from beachbot.utils.github_api import download as github_download
+from beachbot.manipulators.motor import Motor
+from beachbot.manipulators.drive import DriveSystem
 
 class VrepRobotSimV1(RobotInterface):
     def __init__(self, scene=None):
@@ -32,9 +34,9 @@ class VrepRobotSimV1(RobotInterface):
         self.cameradevices[RobotInterface.CAMERATYPE.FRONT] = VrepCameraSim(self._vrep_sim, "cam_front")
 
         # Motor Controller Setup:
-        motor_left = VrepMotorSim(self._vrep_sim, "motor_left")
-        motor_right = VrepMotorSim(self._vrep_sim, "motor_right")
-        self.platform = DifferentialDrive(motor_left, motor_right)
+        motor_left : Motor = VrepMotorSim(self._vrep_sim, "motor_left")
+        motor_right : Motor = VrepMotorSim(self._vrep_sim, "motor_right")
+        self.platform : DriveSystem  = DifferentialDrive(motor_left, motor_right)
 
         # Init Robot arm, gripper limits [q_open, q_close] must be adjusted to gripper hardware!
         self.arm = VrepRoArmM1Sim(self._vrep_sim, gripper_limits=[-10,20]) #-1..20 is for custom 3 finger gripper sim model!
