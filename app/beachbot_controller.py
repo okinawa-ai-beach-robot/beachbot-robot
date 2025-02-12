@@ -83,7 +83,6 @@ target_obj="chair"
 
 tab_names = ["Control", "Recordings"]
 
-logger.setLevel(logging.INFO)
 if args.sim:
     logger.info("Using simulation as --sim flag is set")
     from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1

@@ -61,7 +61,7 @@ class Config:
 
 def setup_logger(config: Config = None):
     logger = logging.getLogger("beachbot")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # File handler
     log_path = config.BEACHBOT_LOGS / "beachbot.log"
@@ -74,7 +74,7 @@ def setup_logger(config: Config = None):
 
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.DEBUG)
 
     # Formatter
     formatter = logging.Formatter(
