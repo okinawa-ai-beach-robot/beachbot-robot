@@ -252,19 +252,24 @@ def ui_config_panel(robot : RobotInterface) -> None:
 
 
             with targetelement:
+                tooltipelement = None
                 if type(value)==str:
-                        ui.label("robot."+prop+":")
+                        tooltipelement= ui.label("robot."+prop+":")
                         ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
                 elif type(value)==float:
                         if value_bounds is not None and value_bounds[0] is not None and value_bounds[1] is not None:
-                            ui.label("robot."+prop+":")
+                            tooltipelement = ui.label("robot."+prop+":")
                             ui.slider(min=value_bounds[0], max=value_bounds[1], step=(value_bounds[1]-value_bounds[0])/255.0, value=value, on_change=lambda e, p=prop: robot.set_property(p, float(e.value))).props('label-always')
                         else:
-                            ui.label("robot."+prop+":")
+                            tooltipelement = ui.label("robot."+prop+":")
                             ui.number(label="robot."+prop, value=value, step=0.1, format='%.2f', on_change=lambda e, p=prop: robot.set_property(p, float(e.value)))
                 elif type(value)==bool:
-                        ui.label("robot."+prop+":")
+                        tooltipelement = ui.label("robot."+prop+":")
                         ui.checkbox(value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
+
+                tooltipstr = robot.get_property_description(prop)
+                if tooltipelement is not None and tooltipstr is not None:
+                    tooltipelement.tooltip(tooltipstr)
 
 
 
