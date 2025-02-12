@@ -106,24 +106,17 @@ try:
                 width = res[i, 2] - res[i, 0]
                 height = res[i, 3] - res[i, 1]
                 if units_percent:
-                    # do not use model format, we use resolution of current input...
-                    # Pytorch performs probably fome fance rescaling of the image (to fit the yolo resolution) under the hood
-                    # left /= self.img_width
-                    # top /= self.img_height
-                    # width /= self.img_width
-                    # height /= self.img_height
-                    if units_percent:
-                        # percent estimate, relative to image (input!) size
-                        left /= inputs.shape[1]
-                        top /= inputs.shape[0]
-                        width /= inputs.shape[1]
-                        height /= inputs.shape[0]
-                    else:
-                        # pixel coordinates, round float estimates
-                        left = round(left)
-                        top = round(top)
-                        width = round(width)
-                        height = round(height)
+                    # percent estimate, relative to image (input!) size
+                    left /= inputs.shape[1]
+                    top /= inputs.shape[0]
+                    width /= inputs.shape[1]
+                    height /= inputs.shape[0]
+                else:
+                    # pixel coordinates, round float estimates
+                    left = round(left)
+                    top = round(top)
+                    width = round(width)
+                    height = round(height)
                 bbox = np.array([left, top, width, height])
                 result_boxes.append(bbox)
 
