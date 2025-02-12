@@ -7,6 +7,11 @@ import cv2 as cv
 class Yolo5Detector(DebrisDetector):
     def __init__(self, model_file=None) -> None:
         super().__init__(model_file)
+        
+        self.conf_threshold = 0.3
+        self.register_property("conf_threshold",max_value=1.0, min_value=0.0, descr="YOLO detection threshold")
+
+        
 
     def apply_model(self, inputs):
         raise NotImplementedError

@@ -1,7 +1,6 @@
-from beachbot.config import logger
+from beachbot.config import config, logger
 from .debrisdetector import DebrisDetector
 from .yolov5_detector import Yolo5Detector
-from beachbot.config import config
 import torch
 import numpy as np
 
@@ -15,13 +14,12 @@ try:
     class Yolo5TorchHub(Yolo5Detector):
         _description = """
         Official YOLOv5 implementation based on Pytorch and torch Hub.\n
+        This Module can load the official as well as self-trained models.
         """
 
         def __init__(self, model_file=None, use_accel=True) -> None:
             super().__init__(None)
 
-            self.conf_threshold = 0.3
-            self.register_property("conf_threshold",max_value=1.0, min_value=0.0)
 
             if model_file is None:
                 model_file = str(config.BEACHBOT_MODELS) + "/Original_YOLOv5s/"
@@ -51,20 +49,23 @@ try:
                 )
                 try:
                     if os.path.isfile(model_folder + os.path.sep + "best.pt"):
+                        logger.info("Loading pt model file")
                         self.net = torch.hub.load(
                             "ultralytics/yolov5:master",
                             "custom",
                             path=model_folder + os.path.sep + "best.pt",
                         )
                     else:
+                        logger.info("Loading onnx model file")
                         self.net = torch.hub.load(
                             "ultralytics/yolov5:master",
                             "custom",
                             path=model_folder + os.path.sep + "best.onnx",
                         )
                 except Exception as ex:
-                    print("Error:", ex)
+                    logger.error(str(ex))
             else:
+                logger.info(f"Loading original yolov5 model {self.model_type}")
                 self.net = torch.hub.load("ultralytics/yolov5:master", self.model_type)
                 self.list_classes = []
                 for clsnr in range(max(list(self.net.names.keys())) + 1):
@@ -80,9 +81,11 @@ try:
             # self.net.amp = True  # Automatic Mixed Precision (AMP) inference
 
             if use_accel and torch.cuda.is_available():
+                logger.info("Inference on CUDA is available")
                 self.net.cuda()
                 self.net.amp = True  # Automatic Mixed Precision (AMP) inference
             else:
+                logger.info("Inference on CPU")
                 self.net.cpu()
 
             self.dtype = np.float32
@@ -119,6 +122,9 @@ try:
                     height = round(height)
                 bbox = np.array([left, top, width, height])
                 result_boxes.append(bbox)
+
+                if self.debug:
+                    logger.debug(f"Detection with threshold {self.net.conf}, on {inputs.shape} image, boxes are {result_boxes}, confidences are {result_confidences}")
 
             return result_class_ids, result_confidences, result_boxes
 
