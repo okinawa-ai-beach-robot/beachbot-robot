@@ -40,6 +40,9 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         self._current_angular_vel = 0
         self._current_velocity = 0
 
+        # The maximum value change per second of the contorl values (set_target)..
+        # Values from set_target are gradually reached instaed of instantanously 
+        # Meant to avoid quick back-forth movements or other unrealistic accelerations by the robot
         self._max_rate_of_change = 100
 
         self._motor_left_speed = 0
@@ -70,7 +73,7 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         self._is_running = True
         while self._is_running:
             t_start = time.time()
-            # do work....
+            # do work.... run the control loop
 
             # safety stop:
             if self._command_timeout is not None and self._command_timeout>0 and (self._target_angular_vel!=0 or self._target_velocity!=0):
@@ -80,30 +83,31 @@ class DifferentialDrive(DriveSystem, threading.Thread):
                     self.set_target(0, 0)
 
 
-            # Update current angular and linear velocity
+            # estimate difference between current (last) motor command and targets (requested via set_target)
+            # dir menas how fast robot should rotate around own axis
+            # vel means how fast the robot should move forward
+            # See "set_targets" for more info
             dir_delta = self._target_angular_vel - self._current_angular_vel
             vel_delta = self._target_velocity - self._current_velocity
             
-
+            # Estimate the sign, i.e. is the new targets are smaller or lager as the current ones (-1 or 1)
             dir_dir = sign(dir_delta)
             vel_dir = sign(vel_delta)
 
+            # Move current motor signal toward the target, but limit the amount of value change to "self._max_rate_of_change" 
             dir_dot = dir_dir * min(
                 self._max_rate_of_change / self.update_freq, abs(dir_delta)
             )
-            vel_dot = vel_dir * min(
-                self._max_rate_of_change / self.update_freq, abs(vel_delta)
-            )
-            dir_dot = dir_dir * min(
-                self._max_rate_of_change / self.update_freq, abs(dir_delta)
-            )
+
             vel_dot = vel_dir * min(
                 self._max_rate_of_change / self.update_freq, abs(vel_delta)
             )
 
+            # Limit calue rage to -100 to 100 percent
             self._current_angular_vel = bounded(
                 self._current_angular_vel + dir_dot, -100, 100
             )
+
             self._current_velocity = bounded(
                 self._current_velocity + vel_dot, -100, 100
             )
@@ -125,6 +129,7 @@ class DifferentialDrive(DriveSystem, threading.Thread):
                 sign(__motor_right_speed) * 15 + __motor_right_speed, -100, 100
             )
 
+            # Update motors if target values changed
             if self._motor_left_speed != int(__motor_left_speed):
                 self._motor_left_speed = int(__motor_left_speed)
                 self.motor_left.change_speed(self._motor_left_speed)
@@ -134,6 +139,8 @@ class DifferentialDrive(DriveSystem, threading.Thread):
                 self.motor_right.change_speed(self._motor_right_speed)
 
 
+
+            # The following code causes the control loop to keep the desired update rate "self.update_freq"
             update_interval = (1.0 / self.update_freq)
             if self._last_command_overwrite>0: self._last_command_overwrite -= update_interval
 

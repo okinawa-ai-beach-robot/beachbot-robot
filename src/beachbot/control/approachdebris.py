@@ -34,9 +34,9 @@ class ApproachDebris(RobotController):
         self.pid_debug=False
         self.register_property("pid_debug")
 
-        self.targetfilter=["cup","toilet"]
+        self.targetfilter=["cup","toilet", "sports ball"]
         # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
-        self.register_property("targetfilter", ",".join(self.targetfilter))
+        self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
         self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=default_kp)
 
     def property_changed_callback(self, name):
