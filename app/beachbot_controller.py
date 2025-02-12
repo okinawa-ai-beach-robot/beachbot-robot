@@ -487,7 +487,7 @@ with tab_panel:
                     with ui.tab_panel(one_view):
                         video_image = ui.interactive_image().classes("w-full h-full")
                     with ui.tab_panel(two_view):       
-                        controller_plot = ui.line_plot(n=2, limit=60, figsize=(9, 6), update_every=5).with_legend(['Motor1', 'Motor2'], loc='upper center', ncol=2).classes('w-full h-full border')
+                        controller_plot = ui.line_plot(n=6, limit=60, figsize=(9, 6), update_every=5).with_legend(['Motor1', 'Motor2', 'vel_target', "vel_current", "rot_target", "rot_current"], loc='upper center', ncol=3).classes('w-full h-full border')
     with ui.tab_panel(two):
         with ui.dropdown_button("Select File...", auto_close=True) as selector:
             pass
@@ -506,18 +506,29 @@ live_update_timer = ui.timer(
 def update_controller_plot():
 
     if isinstance(robot.platform, DifferentialDrive):
-        rspeed = robot.platform.motor_right.get_speed()
-        lspeed = robot.platform.motor_left.get_speed()
+
+        plotdata=[]
+        plotdata.append([robot.platform.motor_right.get_speed()])
+        plotdata.append([robot.platform.motor_left.get_speed()])
+        plotdata.append([robot.platform._target_velocity])
+        plotdata.append([robot.platform._current_velocity])
+        plotdata.append([robot.platform._target_angular_vel])
+        plotdata.append([robot.platform._current_angular_vel])
         now = datetime.now()
-        controller_plot.push([now], [[rspeed], [lspeed]]) #, y_limits=(-100, 100)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            controller_plot.push([now], plotdata) #, y_limits=(-100, 100)
         
 
 timer_controller = ui.timer(0.1, update_controller_plot, active=False)
 def tab_panel_view_change():
     if tab_panel_view.value == view_ctrl_tab_name:
         timer_controller.activate()
+        live_update_timer.deactivate()
+
     else:
         timer_controller.deactivate()
+        live_update_timer.activate()
 tab_panel_view.on_value_change(tab_panel_view_change)
 
 
