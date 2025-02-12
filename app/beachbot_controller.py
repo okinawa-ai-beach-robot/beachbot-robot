@@ -1,5 +1,10 @@
 # the future is now... (avoids printing pytoch warnings about deprecated functions to console)
+from datetime import datetime
 import warnings
+
+import beachbot.manipulators
+import beachbot.manipulators.drive
+import beachbot.robot
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from pathlib import Path
@@ -39,6 +44,7 @@ from beachbot.assets import get_asset_path
 from beachbot.utils.system import MonitoredStdStreams
 
 from beachbot.robot.robotinterface import RobotInterface
+from beachbot.manipulators.drive import DifferentialDrive
 
 from beachbot.ai.yolov5_torch_hub import Yolo5TorchHub
 from beachbot.ai.blobdetectoropencv import BlobDetectorOpenCV
@@ -223,6 +229,10 @@ def blobcfg():
 
 
 
+
+
+
+
 @ui.refreshable
 def ui_config_panel(robot : RobotInterface) -> None:
     # TODO with ui.scroll_area().classes('w-full h-full border'):
@@ -319,26 +329,7 @@ def change_media(file):
     uivideo.set_source("/my_videos/" + file)
 
 
-def tab_select_event():
-    global live_update_timer, tab_names, video_image
-    try:
-        if tab_panel.value == tab_names[0]:
-            if live_update_timer is None:
-                live_update_timer = ui.timer(
-                    interval=0.5,
-                    callback=lambda: video_image.set_source(
-                        f"/video/frame?{time.time()}"
-                    ),
-                )
-        else:
-            if live_update_timer is not None:
-                live_update_timer.cancel()
-                live_update_timer = None
-        if tab_panel.value == tab_names[1]:
-            print("reload files...")
-            reload_files()
-    except Exception as ex:
-        print(ex)
+
 
 
 def reload_files():
@@ -404,7 +395,7 @@ with ui.tabs().classes("w-full") as tabs:
     one = ui.tab(tab_names[0])
     two = ui.tab(tab_names[1])
 tab_panel = ui.tab_panels(tabs, value=one).classes("w-full")
-tab_panel.on_value_change(tab_select_event)
+
 with tab_panel:
     with ui.tab_panel(one):
         with ui.row().classes("w-full"):
@@ -485,7 +476,18 @@ with tab_panel:
                         ui_config_panel(robot)
 
             with splitter.after:
-                video_image = ui.interactive_image().classes("w-full h-full")
+                ui.label("Robot Live View")
+                with ui.tabs().classes("w-full") as tabs_view:
+                    cam_view_tab_name = "Robot Cam"
+                    one_view = ui.tab(cam_view_tab_name)
+                    view_ctrl_tab_name = "Controller View"
+                    two_view = ui.tab(view_ctrl_tab_name)
+                tab_panel_view = ui.tab_panels(tabs_view, value=one_view).classes("w-full")
+                with tab_panel_view.classes("w-full h-full"):
+                    with ui.tab_panel(one_view):
+                        video_image = ui.interactive_image().classes("w-full h-full")
+                    with ui.tab_panel(two_view):       
+                        controller_plot = ui.line_plot(n=2, limit=60, figsize=(9, 6), update_every=5).with_legend(['Motor1', 'Motor2'], loc='upper center', ncol=2).classes('w-full h-full border')
     with ui.tab_panel(two):
         with ui.dropdown_button("Select File...", auto_close=True) as selector:
             pass
@@ -501,6 +503,39 @@ live_update_timer = ui.timer(
 )
 
 
+def update_controller_plot():
+
+    if isinstance(robot.platform, DifferentialDrive):
+        rspeed = robot.platform.motor_right.get_speed()
+        lspeed = robot.platform.motor_left.get_speed()
+        now = datetime.now()
+        controller_plot.push([now], [[rspeed], [lspeed]]) #, y_limits=(-100, 100)
+        
+
+timer_controller = ui.timer(0.1, update_controller_plot, active=False)
+def tab_panel_view_change():
+    if tab_panel_view.value == view_ctrl_tab_name:
+        timer_controller.activate()
+    else:
+        timer_controller.deactivate()
+tab_panel_view.on_value_change(tab_panel_view_change)
+
+
+
+def tab_select_event():
+    global live_update_timer, tab_names, video_image
+    try:
+        if tab_panel.value == tab_names[0]:
+            live_update_timer.activate()
+            tab_panel_view.set_value(cam_view_tab_name)
+        else:
+            live_update_timer.deactivate()
+            timer_controller.deactivate()
+            print("reload files...")
+            reload_files()
+    except Exception as ex:
+        print(ex)
+tab_panel.on_value_change(tab_select_event)
 
 
 # disconnect clients (websocket) form server
