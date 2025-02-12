@@ -19,6 +19,10 @@ class RoArmM1(Arm):
         self.device = None
         self._write_lock = threading.Lock()
 
+        # TODO arm offsets for real robot, otherwise targets are not reached properly
+        self.offsets = [0, 0, 1.2, 0, 0]
+
+
         if serial_port is not None:
             self.is_connected = False
             try:
