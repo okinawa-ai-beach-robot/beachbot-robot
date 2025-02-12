@@ -1,4 +1,5 @@
 from beachbot.config import logger
+from beachbot.manipulators.motor import Motor
 
 try:
     import Jetson.GPIO as GPIO
@@ -7,7 +8,7 @@ except (RuntimeError) as ex:
 
 import threading
 
-class JetsonMotor:
+class JetsonMotor(Motor):
     def __init__(
         self,
         name: str,
@@ -29,7 +30,8 @@ class JetsonMotor:
         :param lo1: Optional GPIO pin for LO1 (error signal from motor driver), should be between 0 and 40.
         :param lo2: Optional GPIO pin for LO2 (error signal from motor driver), should be between 0 and 40.
         """
-        self.name: str = name
+        super().__init__(name)
+        
         self.pwm_pin: int = pwm_pin
         self.in1: int = in1
         self.in2: int = in2
@@ -39,6 +41,10 @@ class JetsonMotor:
         self.duty_cycle_percent: int = (
             0  # Initialized to 0, and int can hold -100 to 100 inclusively
         )
+
+        # Use this to suppress warmings related to pins already configured previously:
+        # GPIO.setwarnings(False)
+
         GPIO.setup([in1, in2], GPIO.OUT, initial=GPIO.LOW)
         # set pin as an output pin with optional initial state of LOW
         GPIO.setup(self.pwm_pin, GPIO.OUT, initial=GPIO.LOW)
@@ -99,13 +105,7 @@ class JetsonMotor:
                          positive values represent forward motion,
                          and zero stops the motor.
         """
-        if not -100 <= speed <= 100:
-            raise ValueError(
-                f"Speed must be between -100 and 100 inclusive. Received: {speed}"
-            )
-        if speed<1 and speed>-1:
-            speed=0
-
+        super().change_speed(speed)
 
         self.duty_cycle_percent = abs(speed)
 
@@ -123,8 +123,9 @@ class JetsonMotor:
         self.pwm.ChangeDutyCycle(self.duty_cycle_percent)
 
     def turn_off(self) -> None:
-        self.change_speed(0)
+        super().turn_off()
         self.pwm.stop()
 
     def cleanup(self):
         self.turn_off()
+        GPIO.cleanup()
