@@ -10,6 +10,7 @@ class Property:
     default: Union[bool, float, str]
     max: Union[float,None] = None
     min: Union[float,None] = None
+    description: Union[str, None] = None
 
 class HasProperties(object):
     def __init__(self):
@@ -26,13 +27,13 @@ class HasProperties(object):
         
 
     
-    def register_property(self, name:str, default_value:Union[bool, float, str, None]=None, max_value:Union[float,None] = None, min_value: Union[float,None] = None):
+    def register_property(self, name:str, default_value:Union[bool, float, str, None]=None, max_value:Union[float,None] = None, min_value: Union[float,None] = None, descr : Union[str,None] = None):
         if default_value is None:
             try:
                 default_value = getattr(self, name)
             except AttributeError:
                 raise ValueError(f"Default property not given, assume self.{name} exists as default")
-        prop = Property(value=default_value, default=default_value, max=max_value, min=min_value)
+        prop = Property(value=default_value, default=default_value, max=max_value, min=min_value, description=descr)
         self._properties[name]=prop
 
 
@@ -77,6 +78,20 @@ class HasProperties(object):
             if was_updated:
                 self.property_changed_callback(name)
 
+
+    def get_property_description(self,name:str) -> Union[str, None]:
+        if "." in name:
+            # retrieve property values from children ....
+            childname, propname=  name.split(".", 1)
+            if childname in self._properties_children:
+                return self._properties_children[childname].get_property_description(propname)
+            else:
+                raise ValueError(f"Child property module {childname} not known, can not get property description of {propname}")
+        else:
+            with self._properties_lock:
+                if name not in self._properties:
+                    return None
+                return self._properties[name].description
 
     def get_property(self,name:str) -> Union[bool, float, str, None]:
         if "." in name:
