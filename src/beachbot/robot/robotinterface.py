@@ -52,6 +52,8 @@ class RobotInterface(HasProperties):
             self.register_child_properties(self.controller, "controller")
         if self.detector is not None:
             self.register_child_properties(self.detector, "detector")
+        if self.platform is not None:
+            self.register_child_properties(self.platform, "drivesystem")
 
 
 

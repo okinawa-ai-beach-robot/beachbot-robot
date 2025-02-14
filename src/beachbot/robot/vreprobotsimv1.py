@@ -40,6 +40,9 @@ class VrepRobotSimV1(RobotInterface):
 
         # Init Robot arm, gripper limits [q_open, q_close] must be adjusted to gripper hardware!
         self.arm = VrepRoArmM1Sim(self._vrep_sim, gripper_limits=[-10,20]) #-1..20 is for custom 3 finger gripper sim model!
+
+        # Update properies provided in this cllass and sub modules.
+        self.refresh_properties()
         
 
 

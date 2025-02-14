@@ -260,13 +260,12 @@ def ui_config_panel(robot : RobotInterface) -> None:
             else:
                 targetelement = ui.row().classes("w-full justify-between no-wrap")
 
-
             with targetelement:
                 tooltipelement = None
                 if type(value)==str:
                         tooltipelement= ui.label("robot."+prop+":")
                         ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
-                elif type(value)==float:
+                elif type(value)==float or type(value)==int:
                         if value_bounds is not None and value_bounds[0] is not None and value_bounds[1] is not None:
                             tooltipelement = ui.label("robot."+prop+":")
                             ui.slider(min=value_bounds[0], max=value_bounds[1], step=(value_bounds[1]-value_bounds[0])/255.0, value=value, on_change=lambda e, p=prop: robot.set_property(p, float(e.value))).props('label-always')

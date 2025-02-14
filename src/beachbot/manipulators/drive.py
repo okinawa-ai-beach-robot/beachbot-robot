@@ -1,6 +1,7 @@
 import time
 from beachbot.config import logger
 from beachbot.manipulators.motor import Motor
+from beachbot.utils.properties import HasProperties
 import threading
 
 
@@ -10,7 +11,7 @@ def sign(x):
 def bounded(val, mi=0, ma=1):
     return min(ma, max(val, mi))
 
-class DriveSystem():
+class DriveSystem(HasProperties):
     def __init__(self):
         super().__init__()
 
@@ -43,7 +44,7 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         # The maximum value change per second of the contorl values (set_target)..
         # Values from set_target are gradually reached instaed of instantanously 
         # Meant to avoid quick back-forth movements or other unrealistic accelerations by the robot
-        self._max_rate_of_change = 100
+        self.max_rate_of_change = 100
 
         self._motor_left_speed = 0
         self._motor_right_speed = 0
@@ -56,6 +57,9 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         self._last_command_update=time.time()
         self._last_command_overwrite=-1
         self._command_timeout=command_timeout
+
+
+        self.register_property("max_rate_of_change", min_value=10, max_value=1000, descr="DifferentialDrive: The maximum rate of change of the control variables (rotatio and velocity) per second. Acts as low pass filter for set_target(rot,vel) and avoids motor burn-out.")
 
 
         super().start()
@@ -94,13 +98,13 @@ class DifferentialDrive(DriveSystem, threading.Thread):
             dir_dir = sign(dir_delta)
             vel_dir = sign(vel_delta)
 
-            # Move current motor signal toward the target, but limit the amount of value change to "self._max_rate_of_change" 
+            # Move current motor signal toward the target, but limit the amount of value change to "self.max_rate_of_change" 
             dir_dot = dir_dir * min(
-                self._max_rate_of_change / self.update_freq, abs(dir_delta)
+                self.max_rate_of_change / self.update_freq, abs(dir_delta)
             )
 
             vel_dot = vel_dir * min(
-                self._max_rate_of_change / self.update_freq, abs(vel_delta)
+                self.max_rate_of_change / self.update_freq, abs(vel_delta)
             )
 
             # Limit calue rage to -100 to 100 percent

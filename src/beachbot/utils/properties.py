@@ -14,6 +14,7 @@ class Property:
 
 class HasProperties(object):
     def __init__(self):
+        super().__init__()
         self._properties_lock = threading.Lock()
         self.clear_properties()
 
@@ -33,6 +34,10 @@ class HasProperties(object):
                 default_value = getattr(self, name)
             except AttributeError:
                 raise ValueError(f"Default property not given, assume self.{name} exists as default")
+            
+        # Only floats (no int) as numeric properties supported for now.
+        if type(default_value)==int: default_value = float(default_value)
+
         prop = Property(value=default_value, default=default_value, max=max_value, min=min_value, description=descr)
         self._properties[name]=prop
 
