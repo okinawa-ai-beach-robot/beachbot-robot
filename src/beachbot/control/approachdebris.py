@@ -17,39 +17,56 @@ class ApproachDebris(RobotController):
         self.missing_target_count = 0
         self.target_arrival_frames = 0
 
-        default_kp = 160.0
+        # Default values of pid controller gain horizontal/vertical, i.e. for rotaitonal/distance difference
+        default_kp_x = 160.0
+        default_kp_y = 160.0
+
+        # Initial target setpoints, in relative position (0..1)
         default_setpoint_x = 0.5
         default_setpoint_y = 0.5
 
-        self.output_enabled=False
-        self.register_property("output_enabled")
 
-        self.register_property("kp", default_kp)
-        self.register_property("setpoint_x", default_setpoint_x)
-        self.register_property("setpoint_y", default_setpoint_y)
-
-        self.detection_threshold = 0.5
-        self.register_property("detection_threshold")
+        # pid_error_threshold to decide if target is reached, coordinates in relative position (0..1)
         self.pid_error_threshold = 0.05
+
+        # Output estimated control to motors
+        self.output_enabled=False
+
+        # Print verbose debug information
         self.pid_debug=False
+
+        # Targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
+        self.targetfilter=["cup","toilet", "sports ball"]
+
+        # Register controller parameters in gui, property changes computet in "property_changed_callback"
+        self.register_property("kp_x", default_value=default_kp_x, descr="PID controller proportial gain for horizontal/rotational errors")
+        self.register_property("kp_y", default_value=default_kp_y, descr="PID controller proportial gain for vertical/distance errors")
+        self.register_property("setpoint_x", default_setpoint_x, descr="Horizontal taget position in relative image coordinates, e.g. 0.25 is left quarter of image; 0.5 is image center.")
+        self.register_property("setpoint_y", default_setpoint_y, descr="Vertical target position in rleative image coordinates, e.g. 0.25 is lower quarter of image; 0.5 is image center.")
+
+        # Register member variables of this class, will be update automatically in case of user interaction        
+        self.register_property("output_enabled", descr="Output estimated control values to motors.")
+        self.register_property("pid_error_threshold", descr="Decide if target is reached if horizontal and vertical errors are below this threshold, coordinates in relative position (0..1)")
         self.register_property("pid_debug")
 
-        self.targetfilter=["cup","toilet", "sports ball"]
-        # targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
         self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
-        self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=default_kp)
+        
+        # Create pid controller:
+        self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=(default_kp_x, default_kp_y))
 
     def property_changed_callback(self, name):
-
-        # Setpoints have to be set in the ctrl class, other properties are set in this class as default
+        # Setpoints and gains have to be set in the ctrl class, other properties are set in this class as default
         if name=="setpoint_x":
             self.ctrl.setpoint_x=self.get_property(name)
         elif name=="setpoint_y":
             self.ctrl.setpoint_y=self.get_property(name)
-        elif name=="kp":
-            self.ctrl.kp=self.get_property(name)
+        elif name=="kp_x":
+            self.ctrl.kp=(self.get_property(name),self.ctrl.kp[1])
+        elif name=="kp_y":
+            self.ctrl.kp=(self.ctrl.kp[0], self.get_property(name))
         else:
             super().property_changed_callback(name)
+            
 
     def update(self, robot: RobotInterface, detections: List[BoxDef]=None) -> bool:
         """
