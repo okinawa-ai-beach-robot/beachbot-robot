@@ -82,7 +82,7 @@ parser.add_argument("--sim", default=False, action="store_true", help="Execute i
 args = parser.parse_args()
 
 
-target_obj="chair"
+target_obj="none"
 
 
 robot_config_filename = str(config.BEACHBOT_CONFIG / "robo_config.json")
@@ -100,6 +100,8 @@ else:
     robot = JetsonRobotV1()
 
 robot.start()
+
+logger.info("Wait (3s) for initalization...")
 time.sleep(3)
 
 
@@ -232,6 +234,24 @@ def blobcfg():
 
 
 
+def update_target_obj(robot : RobotInterface) -> None:
+    global target_obj
+    prop="controller.approach.targetfilter"
+    try:
+        val = robot.get_property(prop)
+        if val is not None:
+            target_obj = str(val).split(",")
+    except ValueError:
+        # Controller not loaded, do not update
+        pass
+
+
+
+def update_string_prop(robot : RobotInterface, name, val):
+    global target_obj
+    robot.set_property(name, val)
+    if name == "controller.approach.targetfilter":
+        target_obj = str(val).split(",")
 
 
 @ui.refreshable
@@ -240,6 +260,10 @@ def ui_config_panel(robot : RobotInterface) -> None:
     if robot is not None:
         prop_classes={}
         for prop in robot.list_property_names():    
+            # update global target object list for box drawing:
+            update_target_obj(robot)
+
+
             value = robot.get_property(prop)
             value_bounds = robot.get_property_bounds(prop)
             if "." in prop:
@@ -264,7 +288,7 @@ def ui_config_panel(robot : RobotInterface) -> None:
                 tooltipelement = None
                 if type(value)==str:
                         tooltipelement= ui.label("robot."+prop+":")
-                        ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
+                        ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: update_string_prop(robot, p, e.value))
                 elif type(value)==float or type(value)==int:
                         if value_bounds is not None and value_bounds[0] is not None and value_bounds[1] is not None:
                             tooltipelement = ui.label("robot."+prop+":")
@@ -357,13 +381,17 @@ def convert(frame: np.ndarray) -> bytes:
 
 
 def add_imgbox(pleft=0, ptop=0, w=0, h=0, clsstr=None, color='#FF0000', conf_value=None, align="start"):
+    global target_obj
     svgstr=""
+
+    if clsstr in target_obj:
+        # Overwrite green color for followed object... 
+        color="#00FF00"
+
     if conf_value is not None:
         clsstr+=f"({conf_value:.2f})"
     # color = 'SkyBlue'
-    if clsstr==target_obj:
-        # Overwrite green color for followed object... 
-        color="#00FF00"
+
     svgstr += f'<rect x="{pleft*100}%" y="{ptop*100}%" ry="15" height="{h*100}%" width="{w*100}%" fill="none" stroke="{color}" stroke-width="4" />'
     if clsstr is not None:
         if align=="start":
