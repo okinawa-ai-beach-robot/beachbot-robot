@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import threading
 from typing import List, Union, Tuple
 
+import json
+
 
 @dataclass
 class Property:
@@ -142,3 +144,31 @@ class HasProperties(object):
             setattr(self, name, self.get_property(name))
         except AttributeError:
             raise ValueError(f"Unknown Parameter stored in self.{name}")
+        
+
+    def export_state(self) -> dict:
+        storage : dict = {}
+        for p in self.list_property_names():
+            v = self.get_property(p)
+            storage[p]=v
+        return storage
+    
+    def import_state(self, storage:dict):
+        for key, value in storage.items():
+            try:
+                self.set_property(key, value)
+            except ValueError as ex:
+                # ignore saved properties not available:
+                pass
+    
+    def store_properties(self, file):
+        storage = self.export_state()
+        with open(file, 'w') as json_file:
+            json.dump(storage, json_file)
+
+    def load_propertis(self, file):
+        with open(file, 'r') as json_file:
+            storage = json.load(json_file)
+        self.import_state(storage)
+
+        

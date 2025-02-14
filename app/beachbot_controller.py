@@ -85,6 +85,7 @@ args = parser.parse_args()
 target_obj="chair"
 
 
+robot_config_filename = str(config.BEACHBOT_CONFIG / "robo_config.json")
 
 
 tab_names = ["Control", "Recordings"]
@@ -236,7 +237,6 @@ def blobcfg():
 @ui.refreshable
 def ui_config_panel(robot : RobotInterface) -> None:
     # TODO with ui.scroll_area().classes('w-full h-full border'):
-
     if robot is not None:
         prop_classes={}
         for prop in robot.list_property_names():    
@@ -281,6 +281,14 @@ def ui_config_panel(robot : RobotInterface) -> None:
                     tooltipelement.tooltip(tooltipstr)
 
 
+def store_config():
+    robot.store_properties(robot_config_filename)
+    logger.info(f"Robot Config stored as {robot_config_filename}")
+
+def load_config():
+    robot.load_propertis(robot_config_filename)
+    ui_config_panel.refresh()
+    logger.info(f"Robot Config loaded from {robot_config_filename}")
 
 def toggle_control(doit):
     if doit:
@@ -472,6 +480,9 @@ with tab_panel:
                             ui.label("r:")
                             cart_r_slider = ui.slider(min=-45, max=45, step=1.0, value=0.0, on_change=lambda x: arm_action_cartesian()).props('label')
                     with ui.tab_panel(four_ctrl).classes('w-full h-full border'):
+                        with ui.row():
+                            ui.button("Store Config", on_click=store_config)
+                            ui.button("Load Config", on_click=load_config)
                         ui_config_panel(robot)
 
             with splitter.after:
