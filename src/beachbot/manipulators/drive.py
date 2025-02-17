@@ -68,6 +68,7 @@ class DifferentialDrive(DriveSystem, threading.Thread):
 
     def run(self):
         self._is_running = True
+        last_dimediff = 1/self.update_freq
         while self._is_running:
             t_start = time.time()
             # do work.... run the control loop
@@ -93,11 +94,11 @@ class DifferentialDrive(DriveSystem, threading.Thread):
 
             # Move current motor signal toward the target, but limit the amount of value change to "self.max_rate_of_change" 
             dir_dot = dir_dir * min(
-                self.max_rate_of_change / self.update_freq, abs(dir_delta)
+                last_dimediff*self.max_rate_of_change, abs(dir_delta)
             )
 
             vel_dot = vel_dir * min(
-                self.max_rate_of_change / self.update_freq, abs(vel_delta)
+                last_dimediff*self.max_rate_of_change, abs(vel_delta)
             )
 
             # Limit calue rage to -100 to 100 percent
@@ -145,8 +146,10 @@ class DifferentialDrive(DriveSystem, threading.Thread):
             t_wait = update_interval - (t_end - t_start)
             if t_wait > 0:
                 time.sleep(t_wait)
-            elif t_wait < 0:
-                logger.warning(f"Drive System control loop out of time, took {(t_end - t_start)}sec, target loop is {update_interval}sec")
+            # Simulation may slows down update loop, but does not matter, update loop uses real measured time last_dimediff for update:
+            # elif t_wait < 0:
+            #    logger.warning(f"Drive System control loop out of time, took {(t_end - t_start)}sec, target loop is {update_interval}sec")
+            last_dimediff = (time.time() - t_start)
                 
         # Cleanup, end control loop, stop motors :)
         self.motor_left.change_speed(0)
