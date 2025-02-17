@@ -16,7 +16,7 @@ class DriveSystem(HasProperties):
         super().__init__()
 
 class DifferentialDrive(DriveSystem, threading.Thread):
-    def __init__(self, motor_left:Motor, motor_right:Motor, update_freq=100, command_timeout=1.0) -> None:
+    def __init__(self, motor_left:Motor, motor_right:Motor, update_freq=25, command_timeout=1.0) -> None:
         # Init superclass thread
         super().__init__()
 
@@ -27,19 +27,13 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         self.motor_right : Motor = motor_right
         self.update_freq = update_freq
         self._is_running = False
-        self.motor_left = motor_left
-        self.motor_right = motor_right
-        self.update_freq = update_freq
-        self._is_running = False
+
 
         self._target_angular_vel = 0
         self._target_velocity = 0
         self._current_angular_vel = 0
         self._current_velocity = 0
-        self._target_angular_vel = 0
-        self._target_velocity = 0
-        self._current_angular_vel = 0
-        self._current_velocity = 0
+
 
         # The maximum value change per second of the contorl values (set_target)..
         # Values from set_target are gradually reached instaed of instantanously 
@@ -48,8 +42,7 @@ class DifferentialDrive(DriveSystem, threading.Thread):
 
         self._motor_left_speed = 0
         self._motor_right_speed = 0
-        self._motor_left_speed = 0
-        self._motor_right_speed = 0
+
 
         self.motor_left.change_speed(self._motor_left_speed)
         self.motor_right.change_speed(self._motor_right_speed)
@@ -152,6 +145,9 @@ class DifferentialDrive(DriveSystem, threading.Thread):
             t_wait = update_interval - (t_end - t_start)
             if t_wait > 0:
                 time.sleep(t_wait)
+            elif t_wait < 0:
+                logger.warning(f"Drive System control loop out of time, took {(t_end - t_start)}sec, target loop is {update_interval}sec")
+                
         # Cleanup, end control loop, stop motors :)
         self.motor_left.change_speed(0)
         self.motor_right.change_speed(0)
