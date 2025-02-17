@@ -59,7 +59,7 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         self._command_timeout=command_timeout
 
 
-        self.register_property("max_rate_of_change", min_value=10, max_value=1000, descr="DifferentialDrive: The maximum rate of change of the control variables (rotatio and velocity) per second. Acts as low pass filter for set_target(rot,vel) and avoids motor burn-out.")
+        self.register_property("max_rate_of_change", min_value=10, max_value=1000, descr="DifferentialDrive: The maximum rate of change of the control variables (rotation and velocity) per second. Acts as low pass filter for set_target(rot,vel) and avoids motor burn-out.")
 
 
         super().start()
