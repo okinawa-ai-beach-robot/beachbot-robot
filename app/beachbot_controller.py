@@ -46,17 +46,16 @@ from beachbot.utils.system import MonitoredStdStreams
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.manipulators.drive import DifferentialDrive
 
-from beachbot.ai.yolov5_torch_hub import Yolo5TorchHub
+from beachbot.ai.yolov5_torch_hub import Yolo5TorchHub, BeachbotYolo5TorchHub
 from beachbot.ai.blobdetectoropencv import BlobDetectorOpenCV
-class BeachbotYolo5TorchHub(Yolo5TorchHub):
-    def __init__(self, model_file=None, use_accel=True):
-        if model_file is None:
-            model_file = str(config.BEACHBOT_MODELS) + "/beachbot_yolov5s_beach-cleaning-object-detection__v8-yolotrain__yolov5pytorch_640_finetune/"
-        super().__init__(model_file, use_accel)
+# class BeachbotYolo5TorchHub(Yolo5TorchHub):
+#     def __init__(self, model_file=None, use_accel=True):
+#         if model_file is None:
+#             model_file = str(config.BEACHBOT_MODELS) + "/beachbot_yolov5s_beach-cleaning-object-detection__v8-yolotrain__yolov5pytorch_640_finetune/"
+#         super().__init__(model_file, use_accel)
 model_list = [Yolo5TorchHub, BeachbotYolo5TorchHub, BlobDetectorOpenCV]
     
 
-from beachbot.control.robotcontroller import BoxDef
 from beachbot.control.controllerselector import ControllerSelector as MyController
 
 
@@ -79,6 +78,7 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument("--sim", default=False, action="store_true", help="Execute in simulation instead of on real robot")
+parser.add_argument("--cfgload", default=False, action="store_true", help="Reload stored configuration on startup")
 args = parser.parse_args()
 
 
@@ -305,14 +305,7 @@ def ui_config_panel(robot : RobotInterface) -> None:
                     tooltipelement.tooltip(tooltipstr)
 
 
-def store_config():
-    robot.store_properties(robot_config_filename)
-    logger.info(f"Robot Config stored as {robot_config_filename}")
 
-def load_config():
-    robot.load_propertis(robot_config_filename)
-    ui_config_panel.refresh()
-    logger.info(f"Robot Config loaded from {robot_config_filename}")
 
 def toggle_control(doit):
     if doit:
@@ -509,8 +502,8 @@ with tab_panel:
                             cart_r_slider = ui.slider(min=-45, max=45, step=1.0, value=0.0, on_change=lambda x: arm_action_cartesian()).props('label')
                     with ui.tab_panel(four_ctrl).classes('w-full h-full border'):
                         with ui.row():
-                            ui.button("Store Config", on_click=store_config)
-                            ui.button("Load Config", on_click=load_config)
+                            btn_store = ui.button("Store Config")
+                            btn_load = ui.button("Load Config")
                         ui_config_panel(robot)
 
             with splitter.after:
@@ -585,6 +578,28 @@ def tab_select_event():
     except Exception as ex:
         print(ex)
 tab_panel.on_value_change(tab_select_event)
+
+
+def store_config():
+    robot.store_properties(robot_config_filename)
+    logger.info(f"Robot Config stored as {robot_config_filename}")
+btn_store.on_click(store_config)
+
+def load_config():
+    robot.load_properties(robot_config_filename)
+    ui_config_panel.refresh()
+    ui_model_info.refresh()
+    print("controller is", robot.get_controller())
+    do_control.set_value(robot.get_controller() is not None)
+    logger.info(f"Robot Config loaded from {robot_config_filename}")
+
+btn_load.on_click(load_config)
+
+
+if args.cfgload:
+    load_config()
+
+
 
 
 # disconnect clients (websocket) form server

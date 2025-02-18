@@ -12,6 +12,7 @@ from beachbot.utils.properties import HasProperties
 from beachbot.manipulators.arm import Arm
 from beachbot.manipulators.drive import DriveSystem
 
+from beachbot.utils.system import instantiate_class, full_class_name
 
 class RobotInterface(HasProperties):
     class CAMERATYPE(Enum):
@@ -214,6 +215,61 @@ class RobotInterface(HasProperties):
             if self.video_writer is not None:
                 self.video_writer.close()
         self.get_camera_image(None)
+
+    def export_state(self) -> dict:
+        """Store current configration to dictionary for storage in JSON config sile or similar.
+        All properties as provided by "HasProperties" interface are stored as well as current detector and controller classes by name.
+
+        The reslting dictionary can be loaded via "import_state" to 
+        reload previous stored parameter configurations of the robot.
+
+
+        Returns:
+            dict: configuration dictionary
+        """
+        storage : dict = super().export_state()
+
+        with self.controller_lock:
+            if self.controller:
+                storage["_cls_controller"]=full_class_name(self.controller)
+        with self.controller_lock:
+            if self.detector:
+                storage["_cls_detector"]=full_class_name(self.detector)
+
+        return storage
+    
+    def import_state(self, storage:dict):
+        """Import config file to configure robot class
+        Tries to load controller and detector classes first if provided in config),
+        then properties of all classes are loaded as stored in config file.
+
+        This method is supposed to relaod the state of the robot config as saved via "export_state".
+
+        Args:
+            storage (dict): configuration dictionary
+        """
+        # try to load controller class by name, if given in config file
+        if "_cls_controller" in storage:
+            _cls_controller = storage.pop("_cls_controller")
+            try:
+                self.set_controller(instantiate_class(_cls_controller))
+            except ImportError as ex:
+                # Import error, deactivate controller and print error message
+                self.controller = None
+                logger.error(ex.msg)
+
+        # try to load detector class by name, if given in config file
+        if "_cls_detector" in storage:
+            _cls_detector = storage.pop("_cls_detector")
+            try:
+                self.set_detector(instantiate_class(_cls_detector))
+            except ImportError as ex:
+                # Import error, deactivate detector and print error message
+                self.detector = None
+                logger.error(ex.msg)
+
+        # load remaining properties as defined in config file
+        super().import_state(storage)
 
 
 

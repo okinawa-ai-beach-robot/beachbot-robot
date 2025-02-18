@@ -166,7 +166,7 @@ class HasProperties(object):
         with open(file, 'w') as json_file:
             json.dump(storage, json_file)
 
-    def load_propertis(self, file):
+    def load_properties(self, file):
         with open(file, 'r') as json_file:
             storage = json.load(json_file)
         self.import_state(storage)
