@@ -4,8 +4,10 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 
-from contextlib import redirect_stdout, redirect_stderr
+
 from datetime import datetime
+import io
+
 import io
 
 
@@ -14,11 +16,11 @@ import beachbot.manipulators.drive
 import beachbot.robot
 
 
+
 from pathlib import Path
 import platform, ctypes
 
 
-from beachbot.utils.system import stdout_redirector
 
 if platform.system() == "Linux":
     # Workaround
@@ -51,7 +53,7 @@ import beachbot
 from beachbot.config import config, logger
 import logging
 from beachbot.assets import get_asset_path
-from beachbot.utils.system import MonitoredStdStreams
+
 
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.manipulators.drive import DifferentialDrive
@@ -173,6 +175,7 @@ def ui_model_info(robot : RobotInterface):
 
 
 async def toggle_detection(doit, ai_model=Yolo5TorchHub):
+    global video_image
     global video_image
     video_image.content = ""
     print("Detection:", doit)
