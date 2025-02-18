@@ -1,14 +1,24 @@
 # the future is now... (avoids printing pytoch warnings about deprecated functions to console)
-from datetime import datetime
 import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+
+
+from contextlib import redirect_stdout, redirect_stderr
+from datetime import datetime
+import io
+
 
 import beachbot.manipulators
 import beachbot.manipulators.drive
 import beachbot.robot
-warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 from pathlib import Path
 import platform, ctypes
+
+
+from beachbot.utils.system import stdout_redirector
 
 if platform.system() == "Linux":
     # Workaround
@@ -162,65 +172,12 @@ def ui_model_info(robot : RobotInterface):
          ui.label("Model: None")
 
 
-
-# with ui.dialog() as dialog:
-#     with ui.card():
-#         ui.label('Hello world!')
-#         ui.button('Close', on_click=dialog.close)
-
-
-# class UILoadDialog(ui.dialog):
-#     def __init__(self):
-#         super().__init__()
-#         self.msg="none\n"
-#         #self.updateui()
-
-#     def updateui(self):
-#         with ui.card():
-#             ui.textarea(self.msg)
-#             ui.button('Close', on_click=self.close)
-
-#     def show_me(self):
-#         self.open()
-
-
-# diag = UILoadDialog()
-
 async def toggle_detection(doit, ai_model=Yolo5TorchHub):
-    global detector, video_image, diag
+    global video_image
     video_image.content = ""
     print("Detection:", doit)
     if doit:
-        # def f(s, file=sys.stdout):
-        #     print("redirected", s, file=file)
-        #     print("redirect end", file=file)
-        # mys=MonitoredStream(sys.stdout, f)
-
-        # TODO jfq
-        # #diag = UILoadDialog()
-        # #diag.show_me()
-        # msg = ""
-
-        # def f_std(s, msg):
-        #     print(s)
-        #     msg += s
-        #     #loadingdialog.refresh(msg)
-
-        # def f_err(s, msg):
-        #     print(s)
-        #     msg += s
-        #     #loadingdialog.refresh(msg)
-
-        #with MonitoredStdStreams(lambda s: f_std(s, msg),lambda s: f_err(s, msg)): # 
         robot.set_detector(ai_model())
-
-        
-        # Set Initial confidence threshold for object detector
-        try:
-            robot.set_property("detector.conf_threshold", 0.3)
-        except ValueError:
-            logger.warning("Current detector does not support confidence thresholding")
-
     else:
         robot.set_detector(None)
     ui_model_info.refresh(robot)
