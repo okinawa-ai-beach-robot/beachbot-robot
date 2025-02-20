@@ -64,6 +64,14 @@ class VrepRobotSimV1(RobotInterface):
 
     def stop(self):
         print("TODO: Stop robot")
+
+    def cleanup(self):
+        super().cleanup()
+        self._vrep_sim.stopSimulation()
+        # make sure socket connection is closed, 
+        # in case another client wants to connect
+        del self._vrep_handle
+
     
     
     
