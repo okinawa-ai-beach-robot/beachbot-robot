@@ -72,6 +72,29 @@ class Arm:
         self.pickup_trajectory = Trajectory.from_file(pickup_path)
         self.toss_trajectory = Trajectory.from_file(toss_path)
 
+        # optional, interpolate in a grid +/- trajectories_condition_dist between recorded trajectories
+        self.trajectories_condition_dist = 0.10
+        self.trajectories_condition_dist_conditions = [(-self.trajectories_condition_dist,-self.trajectories_condition_dist),(-self.trajectories_condition_dist,self.trajectories_condition_dist),(self.trajectories_condition_dist,-self.trajectories_condition_dist),(self.trajectories_condition_dist,self.trajectories_condition_dist)]
+        try:
+            # all required files for interpolation found, let's give it a try!
+            self.pickup_trajectory_library = {}
+            self.toss_trajectory_library = {}
+            for c in self.trajectories_condition_dist_conditions:
+                suffix = f"_{c[0]*100:.0f}_{c[1]*100:.0f}cm.npz"
+                file_pick = asset_path / ("pickup" + suffix + ".npz")
+                traj_pick = Trajectory.from_file(file_pick)
+                self.pickup_trajectory_library[c] = traj_pick
+
+                file_toss = asset_path / ("toss" + suffix + ".npz")
+                traj_toss = Trajectory.from_file(file_toss)
+                self.toss_trajectory_library[c]=traj_toss
+        except:
+            # not all files available or some other fancy error, show an error and disable interpolation
+            logger.error("Pickup and toss movements will not support off-center commands, trajectory files not found :'(")
+            self.pickup_trajectory_library = None
+            self.toss_trajectory_library = None
+
+
     def fkin(self, qs):
         """
         x,y,z = fkin([angle_1, angle_2, angle_3, angle_4])
@@ -236,8 +259,7 @@ class Arm:
     def set_joints_enabled(self, is_enabled):
         """
         Overridden by child classes as API differs greatly
-        TODO @Jeffrey add what and how this is supposed to work
-        as it is very unclear at the moment.
+        Activate join torque (if is_enabled) or free joints (zero torque)
         """
         pass
 
@@ -466,6 +488,47 @@ class Arm:
             logger.debug("Distance to target: " + str(dist))
             logger.debug("Error in joint angles: " + str(qs - qs_target))
             sleep(polling_interval)
+
+
+
+    def _load_trajectoy(self, name:str):
+        asset_path = get_asset_path()
+        path = asset_path / (name+".npz")
+        return Trajectory.from_file(path)
+    
+    def _interpolate_traj(self, basename, offset=[0,0]):
+        conditions = []
+
+        # Stupid solution, if above center take upper corners and center, otherwise take lower corners and center for interpolation:
+        if offset[1]>0:
+            conditions=[(-self.trajectories_condition_dist, self.trajectories_condition_dist), (self.trajectories_condition_dist, self.trajectories_condition_dist )]
+        elif :
+            conditions=[(-self.trajectories_condition_dist, -self.trajectories_condition_dist), (self.trajectories_condition_dist, -self.trajectories_condition_dist )]
+
+        dists = []
+        for p in [(0,0)] + conditions:
+            d = math.sqrt((p[0]-offset[0])**2 + (p[1]-offset[1]))
+            dists.append(d)
+        #calculate interpolation weights for all three trajectories,
+        # the closer the higher the weight:
+        weights = [1/d for d in dists]
+        # normalize weights, sum is one:
+        ws = sum(weights)
+        weights = [w/ws for w in weights]
+
+        # ok, fancy now lets interpolate the trajectories ....
+        
+        # first add the first trajectory (weightes)
+        traj = self._load_trajectoy(basename)
+        traj.qs *= weights[0]
+        traj.ts *= weights[0]
+
+        # Now add the remaining trajectories (weighted) to the frist one to perform interpolation
+        for nr, c in enumerate(conditions):
+            traj_add = self._load_trajectoy(f"{basename}_{c[0]*100:.0f}_{c[1]*100:.0f}cm")
+            traj.qs += traj_add.qs * weights[1+nr]
+            traj.ts += traj_add.ts * weights[1+nr]
+        return traj
 
     def pickup(self, speed_factor=20):
         self.replay_trajectory(
