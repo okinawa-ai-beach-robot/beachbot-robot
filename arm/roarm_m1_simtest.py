@@ -1,11 +1,12 @@
 import time
 import beachbot
-from beachbot.robot import RobotInterface, VrepRobotSimV1
+from beachbot.robot.robotinterface import RobotInterface
+from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
 import math
 
 epsilon = 1e-5
 
-robot = VrepRobotSimV1()
+robot = VrepRobotSimV1("roarm_m1_locomotion_3finger.ttt")
 
 arm = robot.arm
 
@@ -82,8 +83,8 @@ print("All ok :)")
 #     print("-----")
 
 
-print("fkin", arm.fkin([45,45,0,45]))
-arm.set_joint_targets([45,45,0,45])
+print("fkin", arm.fkin([0,0,0,0]))
+arm.set_joint_targets([0,0,0,0])
 time.sleep(5)
 print(arm.get_gripper_pos())
 
