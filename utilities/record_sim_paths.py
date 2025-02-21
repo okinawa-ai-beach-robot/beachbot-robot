@@ -112,24 +112,22 @@ robot.cleanup()
 # record offset conditions for interpolation:
 print("Start recording offset paths")
 condition_dist = 0.10 # +/- 5cm
-
-for cond in [(-condition_dist,-condition_dist),(-condition_dist,condition_dist),(condition_dist,-condition_dist),(condition_dist,condition_dist)]:
-    x_off = cond[0]
-    y_off = cond[1]
-    offset_pickup = [x_off, y_off, 0]
-    print(f"Record for condition [{x_off},{y_off}] offset of target....")
-    #
-    robot = VrepRobotSimV1(scene="roarm_m1_recorder_3finger.ttt")
-    simarm = robot.arm
-    simarm.open_gripper()
-    simarm.set_target_path_pos(pathpospercent)
-    simarm.wait_target_pos_arrival()
-    
-    pickup_path = assets_path + f"pickup_{x_off*100:.0f}_{y_off*100:.0f}cm.npz"
-    toss_path = assets_path + f"toss_{x_off*100:.0f}_{y_off*100:.0f}cm.npz"
-    pickup(pickup_path, pathpospercent, increment=increment, offset=offset_pickup)
-    toss(toss_path, pathpospercent, increment=increment, offset=offset_pickup)
-    robot.cleanup()
+for x_off in [-condition_dist,0,condition_dist]:
+    for y_off in [-condition_dist,0,condition_dist]:
+        offset_pickup = [x_off, y_off, 0]
+        print(f"Record for condition [{x_off},{y_off}] offset of target....")
+        #
+        robot = VrepRobotSimV1(scene="roarm_m1_recorder_3finger.ttt")
+        simarm = robot.arm
+        simarm.open_gripper()
+        simarm.set_target_path_pos(pathpospercent)
+        simarm.wait_target_pos_arrival()
+        
+        pickup_path = assets_path + f"pickup_{x_off*100:.0f}_{y_off*100:.0f}cm.npz"
+        toss_path = assets_path + f"toss_{x_off*100:.0f}_{y_off*100:.0f}cm.npz"
+        pickup(pickup_path, pathpospercent, increment=increment, offset=offset_pickup)
+        toss(toss_path, pathpospercent, increment=increment, offset=offset_pickup)
+        robot.cleanup()
 
 print(f"Done wit hall the fancy recrdings, stores in folder {assets_path}... see ya!")
 
