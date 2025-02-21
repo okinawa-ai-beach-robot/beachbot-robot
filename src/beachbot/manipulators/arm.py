@@ -75,24 +75,7 @@ class Arm:
         # optional, interpolate in a grid +/- trajectories_condition_dist between recorded trajectories
         self.trajectories_condition_dist = 0.10
         self.trajectories_condition_dist_conditions = [(-self.trajectories_condition_dist,-self.trajectories_condition_dist),(-self.trajectories_condition_dist,self.trajectories_condition_dist),(self.trajectories_condition_dist,-self.trajectories_condition_dist),(self.trajectories_condition_dist,self.trajectories_condition_dist)]
-        try:
-            # all required files for interpolation found, let's give it a try!
-            self.pickup_trajectory_library = {}
-            self.toss_trajectory_library = {}
-            for c in self.trajectories_condition_dist_conditions:
-                suffix = f"_{c[0]*100:.0f}_{c[1]*100:.0f}cm.npz"
-                file_pick = asset_path / ("pickup" + suffix + ".npz")
-                traj_pick = Trajectory.from_file(file_pick)
-                self.pickup_trajectory_library[c] = traj_pick
 
-                file_toss = asset_path / ("toss" + suffix + ".npz")
-                traj_toss = Trajectory.from_file(file_toss)
-                self.toss_trajectory_library[c]=traj_toss
-        except:
-            # not all files available or some other fancy error, show an error and disable interpolation
-            logger.error("Pickup and toss movements will not support off-center commands, trajectory files not found :'(")
-            self.pickup_trajectory_library = None
-            self.toss_trajectory_library = None
 
 
     def fkin(self, qs):
@@ -497,49 +480,101 @@ class Arm:
         return Trajectory.from_file(path)
     
     def _interpolate_traj(self, basename, offset=[0,0]):
-        conditions = []
 
-        # Stupid solution, if above center take upper corners and center, otherwise take lower corners and center for interpolation:
-        if offset[1]>0:
-            conditions=[(-self.trajectories_condition_dist, self.trajectories_condition_dist), (self.trajectories_condition_dist, self.trajectories_condition_dist )]
-        elif :
-            conditions=[(-self.trajectories_condition_dist, -self.trajectories_condition_dist), (self.trajectories_condition_dist, -self.trajectories_condition_dist )]
+        self.trajectories_condition_dist_conditions + [(0,0)]
+        # perform bilinear interpolation in a grid of 3x3 points
 
-        dists = []
-        for p in [(0,0)] + conditions:
-            d = math.sqrt((p[0]-offset[0])**2 + (p[1]-offset[1]))
-            dists.append(d)
-        #calculate interpolation weights for all three trajectories,
-        # the closer the higher the weight:
-        weights = [1/d for d in dists]
-        # normalize weights, sum is one:
-        ws = sum(weights)
-        weights = [w/ws for w in weights]
 
-        # ok, fancy now lets interpolate the trajectories ....
+        p_q = offset
+        # 1. check the 4 surrounding points for current query point:
+
+        # 1.1 front left corner (x <= and  y >=)
+        if p_q[0]<0:
+            p1_x = -self.trajectories_condition_dist
+        else:
+            p1_x = 0
+        if p_q[1]>0:
+            p1_y = self.trajectories_condition_dist
+        else:
+            p1_y = 0
+        p1 = (p1_x,p1_y)
+
+        # 1.2 front right corner (x > and  y >=)
+        if p_q[0]<0:
+            p2_x = 0
+        else:
+            p2_x = self.trajectories_condition_dist
+        p2_y = p1_y
+        p2 = (p2_x,p2_y)
+
+        # 1.3 back left corner (x <= and  y >=)
+        p3_x = p1_x
+        if p_q[1]>0:
+            p3_y = 0
+        else:
+            p3_y = -self.trajectories_condition_dist
+        p3 = (p3_x,p3_y)
+
+        # 1.3 back right corner (x > and  y >=)
+        p4 = (p2_x, p3_y)
+
+
+        # load relevant trajectories for interpolation
+        trajs=[]
+        for p_t in [p1,p2,p3,p4]:
+            traj_add = self._load_trajectoy(f"{basename}_{p_t[0]*100:.0f}_{p_t[1]*100:.0f}cm")
+            trajs.append(traj_add)
+
+
+
+        # now we identified the square
+        #[p1]......[p2]
+        # .          .
+        # .   [p]    .
+        #[p3]......[p4]
+
+        # 2. Interpolate horizontally on x between p1/p2 and p3/p4
+        x_fac = (p[0]+self.trajectories_condition_dist)/(2*self.trajectories_condition_dist)
         
-        # first add the first trajectory (weightes)
-        traj = self._load_trajectoy(basename)
-        traj.qs *= weights[0]
-        traj.ts *= weights[0]
+        x1_traj_qs = x_fac*trajs[0].qs + (1-x_fac)*trajs[1].qs
+        x1_traj_ts = x_fac*trajs[0].ts + (1-x_fac)*trajs[1].ts
 
-        # Now add the remaining trajectories (weighted) to the frist one to perform interpolation
-        for nr, c in enumerate(conditions):
-            traj_add = self._load_trajectoy(f"{basename}_{c[0]*100:.0f}_{c[1]*100:.0f}cm")
-            traj.qs += traj_add.qs * weights[1+nr]
-            traj.ts += traj_add.ts * weights[1+nr]
-        return traj
+        x2_traj_qs = x_fac*trajs[2].qs + (1-x_fac)*trajs[3].qs
+        x2_traj_ts = x_fac*trajs[2].ts + (1-x_fac)*trajs[3].ts
 
-    def pickup(self, speed_factor=20):
-        self.replay_trajectory(
-            self.pickup_trajectory.qs, self.pickup_trajectory.ts, speed_factor=speed_factor
-        )
+        # 3. Interpolate vertically (front back) between x1_traj and x2_traj
+        y_fac = (p[1]+self.trajectories_condition_dist)/(2*self.trajectories_condition_dist)
+        traj_qs = y_fac*x2_traj_qs + (1-y_fac)*x1_traj_qs
+        traj_ts = y_fac*x2_traj_ts + (1-y_fac)*x1_traj_ts
 
-    def toss(self, speed_factor=20):
-        self.replay_trajectory(
-            self.toss_trajectory.qs, self.toss_trajectory.ts, speed_factor=speed_factor
-        )
+        logger.debug(f"Interpolated pickup with factos at offset {offset} with params {x_fac} {y_fac} {[p1,p2,p3,p4]}")
 
+        return Trajectory(ts = traj_ts, qs=traj_qs)
+
+
+
+    def pickup(self, offset=None, speed_factor=20):
+        if offset is None:
+            self.replay_trajectory(
+                self.pickup_trajectory.qs, self.pickup_trajectory.ts, speed_factor=speed_factor
+            )
+        else:
+            asset_path = get_asset_path()
+            pickup_path = str(asset_path / "pickup")
+            traj = self._interpolate_traj(pickup_path, offset=offset)
+            self.replay_trajectory(traj)
+
+
+    def toss(self, offset=None, speed_factor=20):
+        if offset is None:
+            self.replay_trajectory(
+                self.toss_trajectory.qs, self.toss_trajectory.ts, speed_factor=speed_factor
+            )
+        else:
+            asset_path = get_asset_path()
+            pickup_path = str(asset_path / "toss")
+            traj = self._interpolate_traj(pickup_path, offset=offset)
+            self.replay_trajectory(traj)
 
 class Trajectory:
     def __init__(self, ts=None, qs=None, taus=None):
