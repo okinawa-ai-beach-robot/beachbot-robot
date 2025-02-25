@@ -68,7 +68,11 @@ from beachbot.ai.blobdetectoropencv import BlobDetectorOpenCV
 model_list = [Yolo5TorchHub, BeachbotYolo5TorchHub, BlobDetectorOpenCV]
     
 
-from beachbot.control.controllerselector import ControllerSelector as MyController
+from beachbot.control.controllerselector import ControllerSelector
+from beachbot.control.approachdebris import ApproachDebris
+from beachbot.control.pickupcontroller import PickupController
+
+controller_list = [ControllerSelector, ApproachDebris, PickupController]
 
 
 from beachbot.utils.videowriteropencv import VideoWriterOpenCV
@@ -105,7 +109,7 @@ tab_names = ["Control", "Recordings"]
 if args.sim:
     logger.info("Using simulation as --sim flag is set")
     from beachbot.robot.vreprobotsimv1 import VrepRobotSimV1
-    robot = VrepRobotSimV1(scene="roarm_m1_locomotion_3finger.ttt")
+    robot = VrepRobotSimV1(scene="beachbot_roarm_3finger.ttt")
 else:
     logger.info("Using real robot as --sim flag is not set")
     from beachbot.robot.jetsonrobotv1 import JetsonRobotV1
@@ -172,38 +176,52 @@ def ui_model_info(robot : RobotInterface):
         ui.label(f"Model: {detector.__class__.__name__}")
     else:
          ui.label("Model: None")
+    ui.space()
+    controller = robot.get_controller()
+    if controller is not None:
+        ui.label(f"Controller: {controller.__class__.__name__}")
+    else:
+         ui.label("Controller: None")
 
 
-async def toggle_detection(doit, ai_model=Yolo5TorchHub):
+async def toggle_detection(ai_model=Yolo5TorchHub):
     global video_image
     global video_image
     video_image.content = ""
-    print("Detection:", doit)
-    if doit:
+    print("Detection:", ai_model)
+    if ai_model is not None:
         robot.set_detector(ai_model())
     else:
         robot.set_detector(None)
     ui_model_info.refresh(robot)
     ui_config_panel.refresh()
 
-def blobcfg():
-    toggle_detection(True)
 
 
-
+async def toggle_controller(robot_controller=ControllerSelector):
+    if robot_controller is not None:
+        robot.set_controller(robot_controller())
+    else:
+        robot.set_controller(None)
+    ui_model_info.refresh(robot)
+    ui_config_panel.refresh()
+    print("Controller:", robot_controller)
 
 
 
 def update_target_obj(robot : RobotInterface) -> None:
     global target_obj
-    prop="controller.approach.targetfilter"
-    try:
-        val = robot.get_property(prop)
-        if val is not None:
-            target_obj = str(val).split(",")
-    except ValueError:
-        # Controller not loaded, do not update
-        pass
+    propbe_props = ["controller.approach.targetfilter", "controller.targetfilter"]
+
+    for prop in propbe_props:
+        try:
+            val = robot.get_property(prop)
+            if val is not None:
+                target_obj = str(val).split(",")
+                return
+        except ValueError:
+            # Controller not loaded, do not update
+            pass
 
 
 
@@ -267,13 +285,13 @@ def ui_config_panel(robot : RobotInterface) -> None:
 
 
 
-def toggle_control(doit):
-    if doit:
-        robot.set_controller(MyController())
-        ui_config_panel.refresh(robot)
-    else:
-        robot.set_controller(None)
-        ui_config_panel.refresh(robot)
+# def toggle_control(doit):
+#     if doit:
+#         robot.set_controller(MyController())
+#         ui_config_panel.refresh(robot)
+#     else:
+#         robot.set_controller(None)
+#         ui_config_panel.refresh(robot)
 
 # def update_kp(new_kp):
 #     if controller is not None:
@@ -392,12 +410,17 @@ with tab_panel:
             ).on_value_change(lambda v: toggle_recoding(v.value == 2))
             with ui.column():
                 with ui.row().classes("w-full"):
-                    with ui.dropdown_button('Select Model', auto_close=True):
-                        ui.item("Detection Off", on_click=lambda: toggle_detection(False, None))
+                    with ui.dropdown_button('Select Model', auto_close=True) as model_selector:
+                        ui.item("Detection Off", on_click=lambda: toggle_detection(None))
                         for model in model_list:
-                            ui.item(str(model.__name__), on_click=lambda m=model: toggle_detection(True, m))
+                            ui.item(str(model.__name__), on_click=lambda m=model: toggle_detection(m))
                     ui.space()
-                    do_control = ui.switch('Robot Control', on_change=lambda x: toggle_control(x.value))
+                    with ui.dropdown_button('Select Controller', auto_close=True) as controller_selector:
+                        controller_list
+                        ui.item("Control Off", on_click=lambda: toggle_controller(None))
+                        for controller in controller_list:
+                            ui.item(str(controller.__name__), on_click=lambda m=controller: toggle_controller(m))
+                    #do_control = ui.switch('Robot Control', on_change=lambda x: toggle_control(x.value))
                 
                 with ui.row().classes("w-full justify-between no-wrap"):
                     ui_model_info(robot)
@@ -549,8 +572,9 @@ def load_config():
     robot.load_properties(robot_config_filename)
     ui_config_panel.refresh()
     ui_model_info.refresh()
+    model_selector.set_value(None)
+    controller_selector.set_value(None)
     print("controller is", robot.get_controller())
-    do_control.set_value(robot.get_controller() is not None)
     logger.info(f"Robot Config loaded from {robot_config_filename}")
 
 btn_load.on_click(load_config)
