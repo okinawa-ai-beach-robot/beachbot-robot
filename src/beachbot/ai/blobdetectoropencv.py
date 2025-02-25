@@ -21,22 +21,35 @@ class BlobDetectorOpenCV(DebrisDetector):
         params.maxArea = maxArea
         params.filterByColor = False
 
-        self.lower_blue = np.array([60, 60, 60])
-        self.upper_blue = np.array([180, 255, 255]) 
+        # Opencv uses 0-179 for hue value 0-359
+        def deg2byte(val):
+            return round(180*(val/360))
+        self.lower_blue = np.array([deg2byte(190), 60, 60])
+        self.upper_blue = np.array([deg2byte(255), 255, 255]) 
+        self.lower_green = np.array([deg2byte(92), 60, 60])
+        self.upper_green = np.array([deg2byte(145), 255, 255]) 
+        self.lower_yellow = np.array([deg2byte(45), 60, 60])
+        self.upper_yellow = np.array([deg2byte(71), 255, 255]) 
+        self.lower_pink = np.array([deg2byte(270), 60, 60])
+        self.upper_pink = np.array([deg2byte(340), 255, 255]) 
         #params.minThreshold = 10
         #params.thresholdStep = 1
         # params.blobColor = 255
+        self.blobclasses = [
+            (self.lower_blue, self.upper_blue, "blue_blob"),
+            (self.lower_green, self.upper_green, "green_blob"),
+            (self.lower_yellow, self.upper_yellow, "yellow_blob"),
+            (self.lower_pink, self.upper_pink, "pink_blob"),
+        ]
+
         self.params=params
         self.detector = cv2.SimpleBlobDetector_create(params)
 
         self.num_classes = 6
         self.list_classes = [
-                        "other_avoid",
-                        "other_avoid_boundaries",
-                        "other_avoid_ocean",
-                        "others_traverable",
-                        "trash_easy",
-                        "trash_hard",
+                        "green_blob",
+                        "yellow_blob",
+                        "pink_blob",
                         "blue_blob"
                         ]
     
@@ -58,34 +71,36 @@ class BlobDetectorOpenCV(DebrisDetector):
         if debug:
             cv2.imwrite("hsv.png", hsv_img)
 
-
-
-        mask_blue = cv2.inRange(hsv_img, self.lower_blue, self.upper_blue)
-        mask_blue = cv2.erode(mask_blue, None, iterations=0)
-        mask_blue = cv2.dilate(mask_blue, None, iterations=0)
-        s_img = cv2.bitwise_and(s_img,s_img,mask = mask_blue)
-        if debug:
-            cv2.imwrite("mask.png", mask_blue)
-            cv2.imwrite("s_img.png", s_img)
-        keyp = self.detector.detect(mask_blue)
-
         result_boxes = []
         result_class_ids=[]
         result_confidences=[]
-        for p in keyp:
-            if debug or True:
-                print("Blob detector output:", p.pt, p.size, row, col)
 
-            width = (p.size)/col
-            height = (p.size)/row
-            left = (p.pt[0]-p.size/2)/col
-            top = (p.pt[1]-p.size/2)/row
+
+        for lower,upper,clsname in self.blobclasses:
+            mask_blob = cv2.inRange(hsv_img, lower, upper)
+            mask_blob = cv2.erode(mask_blob, None, iterations=0)
+            mask_blob = cv2.dilate(mask_blob, None, iterations=0)
+            s_img = cv2.bitwise_and(s_img,s_img,mask = mask_blob)
             if debug:
-                print("Box from blob is:", left, top, width, height)
-            bbox = np.array([left, top, width, height])
-            result_boxes.append(bbox)
-            result_class_ids.append(self.list_classes.index("blue_blob"))
-            result_confidences.append(1.0)
+                cv2.imwrite(f"mask_{clsname}.png", mask_blob)
+                cv2.imwrite(f"s_img_{clsname}.png", s_img)
+            keyp = self.detector.detect(mask_blob)
+
+
+            for p in keyp:
+                if debug:
+                    print("Blob detector output:", p.pt, p.size, row, col)
+
+                width = (p.size)/col
+                height = (p.size)/row
+                left = (p.pt[0]-p.size/2)/col
+                top = (p.pt[1]-p.size/2)/row
+                if debug:
+                    print("Box from blob is:", left, top, width, height)
+                bbox = np.array([left, top, width, height])
+                result_boxes.append(bbox)
+                result_class_ids.append(self.list_classes.index(clsname))
+                result_confidences.append(1.0)
 
 
         
