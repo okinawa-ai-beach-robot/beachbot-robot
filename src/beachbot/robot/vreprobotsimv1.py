@@ -23,7 +23,7 @@ class VrepRobotSimV1(RobotInterface):
         github_download(self.scene_path,
                         config.BEACHBOT_HARDWARE_REPO,
                         "models/coppeliasim/" + scene,
-                        "pr2",
+                        "sim_improvement",
                         overwrite=True
                         )
 
