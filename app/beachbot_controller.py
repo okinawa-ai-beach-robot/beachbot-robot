@@ -71,8 +71,9 @@ model_list = [Yolo5TorchHub, BeachbotYolo5TorchHub, BlobDetectorOpenCV]
 from beachbot.control.controllerselector import ControllerSelector
 from beachbot.control.approachdebris import ApproachDebris
 from beachbot.control.pickupcontroller import PickupController
+from beachbot.control.jasoncontroller import JasonController
 
-controller_list = [ControllerSelector, ApproachDebris, PickupController]
+controller_list = [ControllerSelector, ApproachDebris, PickupController, JasonController]
 
 
 from beachbot.utils.videowriteropencv import VideoWriterOpenCV
