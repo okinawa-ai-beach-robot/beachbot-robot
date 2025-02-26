@@ -4,6 +4,7 @@ from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.approachdebris import ApproachDebris
 from beachbot.control.pickupcontroller import PickupController
+from beachbot.control.searchcontroller import SearchController
 from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.config import logger
 
@@ -15,14 +16,25 @@ class JasonController(RobotController):
         self.controllers: dict[str, RobotController] = {
             "approach": ApproachDebris(),
             "pickup": PickupController(),
+            "search": SearchController()
         }
-        self.controller = self.controllers["approach"]
+        self.controller = self.controllers["search"]
 
         # Collect all properties of used controllers and add to this class
         for ctrl_name in self.controllers.keys():
             self.register_child_properties(class_instance=self.controllers[ctrl_name],class_name=ctrl_name)
 
+
+
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
+
+        if self.controller is self.controllers["search"]:
+            if self.controller.update(robot, detections) == RESULT.SUCCESS:
+                self.controller = self.controllers["approach"]
+
+
+
+
         if self.controller is self.controllers["approach"]:
             # check if approachDebris is done
             if self.controller.update(robot, detections) == RESULT.SUCCESS:
