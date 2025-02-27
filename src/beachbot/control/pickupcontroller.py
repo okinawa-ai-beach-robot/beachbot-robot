@@ -21,7 +21,7 @@ class PickupController(RobotController):
 
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
         if self.arm_thread is None:
-            # Create thread for amr movement, return, to not block controller loop
+            # Create thread for arm movement, return, to not block controller loop
             self.arm_thread = Thread(target=lambda r=robot:self.operate_arm(robot=r))
             self.arm_thread.start()
             return RESULT.BUSY
