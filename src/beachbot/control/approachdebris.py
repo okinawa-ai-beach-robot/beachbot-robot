@@ -30,11 +30,11 @@ class ApproachDebris(RobotController):
         self.register_property("output_enabled")
         self.register_property("setpoint_x", default_setpoint_x)
         self.register_property("setpoint_y", default_setpoint_y)
-
-        self.detection_threshold = 0.5
-        self.register_property("detection_threshold")
+        
         self.pid_error_threshold_x = 0.05
         self.pid_error_threshold_y = 0.05
+        self.register_property("pid_error_threshold_x", descr="Decide if target is reached if horizontal errors are below this threshold, coordinates in relative position (0..1)")
+        self.register_property("pid_error_threshold_y", descr="Decide if target is reached if vertical errors are below this threshold, coordinates in relative position (0..1)")
         self.pid_debug=False
 
         # Targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
@@ -48,7 +48,6 @@ class ApproachDebris(RobotController):
 
         # Register member variables of this class, will be update automatically in case of user interaction        
         self.register_property("output_enabled", descr="Output estimated control values to motors.")
-        self.register_property("pid_error_threshold", descr="Decide if target is reached if horizontal and vertical errors are below this threshold, coordinates in relative position (0..1)")
         self.register_property("pid_debug")
 
         self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
