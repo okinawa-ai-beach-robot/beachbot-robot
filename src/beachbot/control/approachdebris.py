@@ -23,16 +23,18 @@ class ApproachDebris(RobotController):
 
         # Initial target setpoints, in relative position (0..1)
         default_setpoint_x = 0.5
-        default_setpoint_y = 0.6 # 0.6 is good for current simulation file
+        # default_setpoint_y = 0.6 # 0.6 is good for current simulation file
+        default_setpoint_y = 0.45 # good for Jetson camera
 
-
-        # pid_error_threshold to decide if target is reached, coordinates in relative position (0..1)
-        self.pid_error_threshold = 0.05
-
-        # Output estimated control to motors
         self.output_enabled=False
+        self.register_property("output_enabled")
+        self.register_property("setpoint_x", default_setpoint_x)
+        self.register_property("setpoint_y", default_setpoint_y)
 
-        # Print verbose debug information
+        self.detection_threshold = 0.5
+        self.register_property("detection_threshold")
+        self.pid_error_threshold_x = 0.05
+        self.pid_error_threshold_y = 0.05
         self.pid_debug=False
 
         # Targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
@@ -112,9 +114,9 @@ class ApproachDebris(RobotController):
             else:
                 robot.set_target_velocity(0,0)
 
-            if abs(dir_error_x) < self.pid_error_threshold and abs(dir_error_y) < self.pid_error_threshold:
+            if abs(dir_error_x) < self.pid_error_threshold_x and abs(dir_error_y) < self.pid_error_threshold_y:
                 self.target_arrival_frames += 1
-                if self.target_arrival_frames > 20:
+                if self.target_arrival_frames > 30:
                     robot.set_target_velocity(0, 0)
                     logger.info("ApproachDebris: Target reached")
                     return RESULT.SUCCESS
