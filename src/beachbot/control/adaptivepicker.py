@@ -1,3 +1,4 @@
+import math
 from threading import Thread
 from typing import List
 from beachbot.robot.robotinterface import RobotInterface
@@ -12,13 +13,27 @@ class AdaptivePickupController(RobotController):
         self.arm_thread=None
 
         self.debug_traj_pos=0
-        self.register_property("debug_traj_pos", max_value=0.1, min_value=-0.1, descr="Arm position in percent of pickup trajectory (only in debug mode)")
+        self.register_property("debug_traj_pos", max_value=1.0, min_value=0.0, descr="Arm position in percent of pickup trajectory (only in debug mode)")
 
         self.debug_offset_x=0
         self.register_property("debug_offset_x", max_value=0.1, min_value=-0.1, descr="Target offset (x, horizontal) in meters (only in debug mode)")
 
         self.debug_offset_y=0
         self.register_property("debug_offset_y", max_value=0.1, min_value=-0.1, descr="Target offset (y, vertical) in meters (only in debug mode)")
+
+        self.debug_traj_pick = None
+        self.debug_traj_toss = None
+        self.traj_is_dirty=True
+
+
+    def property_changed_callback(self, name):
+        super().property_changed_callback(name)
+
+        if name=="debug_offset_x" or name=="debug_offset_y":
+            # recalculate trajectory to account for offset interpolation
+            self.traj_is_dirty=True
+
+            
 
     def operate_arm(self, robot: RobotInterface):
         logger.info("pickup")
@@ -44,9 +59,33 @@ class AdaptivePickupController(RobotController):
             #TODO assess situation and adjust return value appropriately, was pickup successful?
             return RESULT.SUCCESS
         
-        else:
+        elif self.arm_thread is None:
             # if in debug mode, read properties to control arm for testing:
-            print("yeaha!")
+            if self.traj_is_dirty==True:
+                self.traj_is_dirty=False
+                logger.debug(f"Recalculate pickup trajectory with offsets {(self.debug_offset_x, self.debug_offset_y)}")
+                self.debug_traj_pick = robot.arm._interpolate_traj("pickup", (self.debug_offset_x, self.debug_offset_y))
+                self.debug_traj_toss = robot.arm._interpolate_traj("toss", (self.debug_offset_x, self.debug_offset_y))
+                logger.debug(f"Loaded tajectory lengths are {self.debug_traj_pick.get_length()} and {self.debug_traj_toss.get_length()}")
+
+            if self.debug_traj_pos<0.5:
+                # pickup
+                qentry = round((self.debug_traj_pick.get_length()-1) * self.debug_traj_pos/0.5)
+                robot.arm.set_joint_targets(self.debug_traj_pick.qs[qentry])
+            else:
+                # toss
+                qentry = round((self.debug_traj_toss.get_length()-1) * (self.debug_traj_pos-0.5)/0.5)
+                robot.arm.set_joint_targets(self.debug_traj_toss.qs[qentry])
+
             return RESULT.BUSY
+        elif self.arm_thread is not None:
+            if not self.arm_thread.is_alive():
+                # Done, we are not busy anymore with pickup, delete thread for arm movement
+                self.arm_thread = None
+        
+        return RESULT.BUSY
+
+
+            
         
 

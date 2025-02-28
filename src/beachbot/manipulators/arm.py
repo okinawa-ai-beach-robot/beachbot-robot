@@ -5,6 +5,7 @@ import math
 from beachbot.config import config, logger
 from beachbot.assets import get_asset_path
 import threading
+from scipy import signal
 
 
 class Arm:
@@ -534,7 +535,7 @@ class Arm:
         #[p3]......[p4]
 
         # 2. Interpolate horizontally on x between p1/p2 and p3/p4
-        x_fac = (p[0]+self.trajectories_condition_dist)/(2*self.trajectories_condition_dist)
+        x_fac = (p_q[0]-p1[0])/(p2[0]-p1[0])
         
         x1_traj_qs = x_fac*trajs[0].qs + (1-x_fac)*trajs[1].qs
         x1_traj_ts = x_fac*trajs[0].ts + (1-x_fac)*trajs[1].ts
@@ -543,11 +544,11 @@ class Arm:
         x2_traj_ts = x_fac*trajs[2].ts + (1-x_fac)*trajs[3].ts
 
         # 3. Interpolate vertically (front back) between x1_traj and x2_traj
-        y_fac = (p[1]+self.trajectories_condition_dist)/(2*self.trajectories_condition_dist)
+        y_fac = (p_q[1]-p3[1])/(p1[1]-p3[1])
         traj_qs = y_fac*x2_traj_qs + (1-y_fac)*x1_traj_qs
         traj_ts = y_fac*x2_traj_ts + (1-y_fac)*x1_traj_ts
 
-        logger.debug(f"Interpolated pickup with factos at offset {offset} with params {x_fac} {y_fac} {[p1,p2,p3,p4]}")
+        logger.debug(f"Interpolated trajectory with factos at offset {offset} with params {x_fac} {y_fac} {[p1,p2,p3,p4]}")
 
         return Trajectory(ts = traj_ts, qs=traj_qs)
 
@@ -581,6 +582,9 @@ class Trajectory:
         self.ts = ts
         self.qs = qs
         self.taus = taus
+        
+    def get_length(self):
+        return self.qs.shape[0]
 
     @classmethod
     def from_file(cls, trajectory_path: str):
