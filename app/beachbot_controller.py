@@ -228,7 +228,8 @@ def update_target_obj(robot : RobotInterface) -> None:
 def update_string_prop(robot : RobotInterface, name, val):
     global target_obj
     robot.set_property(name, val)
-    if name == "controller.approach.targetfilter":
+    print(f"update str prop {name}, {val}")
+    if name == "controller.approach.targetfilter" or name == "controller.targetfilter":
         target_obj = str(val).split(",")
 
 
