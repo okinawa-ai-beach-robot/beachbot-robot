@@ -18,7 +18,7 @@ class ApproachDebris(RobotController):
 
         default_kp = 160.0
         default_setpoint_x = 0.5
-        default_setpoint_y = 0.5
+        default_setpoint_y = 0.45
 
         self.output_enabled=False
         self.register_property("output_enabled")
@@ -29,7 +29,8 @@ class ApproachDebris(RobotController):
 
         self.detection_threshold = 0.5
         self.register_property("detection_threshold")
-        self.pid_error_threshold = 0.05
+        self.pid_error_threshold_x = 0.05
+        self.pid_error_threshold_y = 0.05
         self.pid_debug=False
         self.register_property("pid_debug")
 
@@ -94,9 +95,9 @@ class ApproachDebris(RobotController):
             else:
                 robot.set_target_velocity(0,0)
 
-            if abs(dir_error_x) < self.pid_error_threshold and abs(dir_error_y) < self.pid_error_threshold:
+            if abs(dir_error_x) < self.pid_error_threshold_x and abs(dir_error_y) < self.pid_error_threshold_y:
                 self.target_arrival_frames += 1
-                if self.target_arrival_frames > 20:
+                if self.target_arrival_frames > 30:
                     robot.set_target_velocity(0, 0)
                     logger.info("ApproachDebris: Target reached")
                     return True
