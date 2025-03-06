@@ -12,6 +12,11 @@ class AdaptivePickupController(RobotController):
         super().__init__()
         self.arm_thread=None
 
+        self.setpoint_x = 0.5
+        self.setpoint_y = 0.6 # 0.6 is good for current simulation file
+        self.register_property("setpoint_x", descr="Horizontal taget position in relative image coordinates, e.g. 0.25 is left quarter of image; 0.5 is image center.")
+        self.register_property("setpoint_y", descr="Vertical target position in rleative image coordinates, e.g. 0.25 is lower quarter of image; 0.5 is image center.")
+
         self.debug_traj_pos=0
         self.register_property("debug_traj_pos", max_value=1.0, min_value=0.0, descr="Arm position in percent of pickup trajectory (only in debug mode)")
 
@@ -20,6 +25,19 @@ class AdaptivePickupController(RobotController):
 
         self.debug_offset_y=0
         self.register_property("debug_offset_y", max_value=0.1, min_value=-0.1, descr="Target offset (y, vertical) in meters (only in debug mode)")
+
+        self.debug_auto_offset=False
+        self.register_property("debug_auto_offset", descr="Target offset are estimated according to target_factors, e.g. pixel_dist_x * target_factor_x = offset_x")
+
+
+        self.target_factor_x=0.8
+        self.register_property("target_factor_x", descr="Target offset (x, horizontal) in meters  = image_dist_x * target_factor_x")
+
+        self.target_factor_y=0.8
+        self.register_property("target_factor_y", descr="Target offset (y, vertical) in meters = image_dist_y * target_factor_y")
+
+        self.targetfilter="blue_blob"
+
 
         self.debug_traj_pick = None
         self.debug_traj_toss = None
@@ -42,6 +60,29 @@ class AdaptivePickupController(RobotController):
         robot.arm.toss()
         robot.arm.go_home()
 
+    def autoset_target_offset(self, robot: RobotInterface, detections: List[BoxDef] = None):
+
+        # trash_to_follow is a list of detections with easy sorting based on BoxDef.confidence
+        # It should only contain objects that match the targetfilter
+        trash_to_follow: List[BoxDef] = []
+        for det in detections:
+            if det.class_name in self.targetfilter:
+                trash_to_follow.append(det)
+        if trash_to_follow is not None and len(trash_to_follow) > 0:
+            self.missing_target_count = 0
+            # sort by confidence
+            trash_to_follow.sort(key=lambda x: x.confidence, reverse=True)
+            # approach trash
+            best_match = trash_to_follow[0]
+            trash_x = best_match.left+best_match.w/2
+            trash_y = 1.0 - (best_match.top+best_match.h/2) # 0 is bottom, 1 is top
+            
+            error_x = self.setpoint_x - trash_x
+            error_y = self.setpoint_y - trash_y
+
+            return (error_x, error_y)
+        return None
+
 
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
         if not self.debug:
@@ -61,12 +102,24 @@ class AdaptivePickupController(RobotController):
         
         elif self.arm_thread is None:
             # if in debug mode, read properties to control arm for testing:
-            if self.traj_is_dirty==True:
+            if self.traj_is_dirty==True and not self.debug_auto_offset:
                 self.traj_is_dirty=False
                 logger.debug(f"Recalculate pickup trajectory with offsets {(self.debug_offset_x, self.debug_offset_y)}")
                 self.debug_traj_pick = robot.arm._interpolate_traj("pickup", (self.debug_offset_x, self.debug_offset_y))
                 self.debug_traj_toss = robot.arm._interpolate_traj("toss", (self.debug_offset_x, self.debug_offset_y))
                 logger.debug(f"Loaded tajectory lengths are {self.debug_traj_pick.get_length()} and {self.debug_traj_toss.get_length()}")
+
+            if self.debug_auto_offset and (self.debug_traj_pos<0.25 or self.traj_is_dirty):
+                self.traj_is_dirty=False
+                # auto estimate the trajectory offsets:
+                err = self.autoset_target_offset(robot, detections)
+                if err is not None:
+                    offsets = (min(0.1, max(-0.1,err[0]*-self.target_factor_x)), min(0.1, max(-0.1,err[1]*-self.target_factor_y)))
+                    logger.debug(f"Auto estimate pickup trajectory with offsets {offsets}, err is {err}")
+                    self.debug_traj_pick = robot.arm._interpolate_traj("pickup", offsets)
+                    self.debug_traj_toss = robot.arm._interpolate_traj("toss", offsets)
+
+
 
             if self.debug_traj_pos<0.5:
                 # pickup

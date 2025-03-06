@@ -537,18 +537,18 @@ class Arm:
         # 2. Interpolate horizontally on x between p1/p2 and p3/p4
         x_fac = (p_q[0]-p1[0])/(p2[0]-p1[0])
         
-        x1_traj_qs = x_fac*trajs[0].qs + (1-x_fac)*trajs[1].qs
-        x1_traj_ts = x_fac*trajs[0].ts + (1-x_fac)*trajs[1].ts
+        x1_traj_qs = (1-x_fac)*trajs[0].qs + (x_fac)*trajs[1].qs
+        x1_traj_ts = (1-x_fac)*trajs[0].ts + (x_fac)*trajs[1].ts
 
-        x2_traj_qs = x_fac*trajs[2].qs + (1-x_fac)*trajs[3].qs
-        x2_traj_ts = x_fac*trajs[2].ts + (1-x_fac)*trajs[3].ts
+        x2_traj_qs = (1-x_fac)*trajs[2].qs + (x_fac)*trajs[3].qs
+        x2_traj_ts = (1-x_fac)*trajs[2].ts + (x_fac)*trajs[3].ts
 
         # 3. Interpolate vertically (front back) between x1_traj and x2_traj
         y_fac = (p_q[1]-p3[1])/(p1[1]-p3[1])
-        traj_qs = y_fac*x2_traj_qs + (1-y_fac)*x1_traj_qs
-        traj_ts = y_fac*x2_traj_ts + (1-y_fac)*x1_traj_ts
+        traj_qs = (1-y_fac)*x2_traj_qs + (y_fac)*x1_traj_qs
+        traj_ts = (1-y_fac)*x2_traj_ts + (y_fac)*x1_traj_ts
 
-        logger.debug(f"Interpolated trajectory with factos at offset {offset} with params {x_fac} {y_fac} {[p1,p2,p3,p4]}")
+        #logger.debug(f"Interpolated trajectory with factos at offset {offset} with params {x_fac} {y_fac} {[p1,p2,p3,p4]}")
 
         return Trajectory(ts = traj_ts, qs=traj_qs)
 
