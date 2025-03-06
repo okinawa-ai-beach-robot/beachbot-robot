@@ -13,7 +13,7 @@ class AdaptivePickupController(RobotController):
         self.arm_thread=None
 
         self.setpoint_x = 0.5
-        self.setpoint_y = 0.6 # 0.6 is good for current simulation file
+        self.setpoint_y = 0.63 # 0.63 is good for current simulation file
         self.register_property("setpoint_x", descr="Horizontal taget position in relative image coordinates, e.g. 0.25 is left quarter of image; 0.5 is image center.")
         self.register_property("setpoint_y", descr="Vertical target position in rleative image coordinates, e.g. 0.25 is lower quarter of image; 0.5 is image center.")
 
@@ -36,7 +36,9 @@ class AdaptivePickupController(RobotController):
         self.target_factor_y=0.8
         self.register_property("target_factor_y", descr="Target offset (y, vertical) in meters = image_dist_y * target_factor_y")
 
-        self.targetfilter="blue_blob"
+        self.targetfilter=["cup","toilet", "sports ball", "blue_blob"]
+        self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
+        
 
 
         self.debug_traj_pick = None
@@ -64,23 +66,26 @@ class AdaptivePickupController(RobotController):
 
         # trash_to_follow is a list of detections with easy sorting based on BoxDef.confidence
         # It should only contain objects that match the targetfilter
-        trash_to_follow: List[BoxDef] = []
+        trash_to_pick: List[BoxDef] = []
         for det in detections:
             if det.class_name in self.targetfilter:
-                trash_to_follow.append(det)
-        if trash_to_follow is not None and len(trash_to_follow) > 0:
-            self.missing_target_count = 0
+                
+                trash_x = best_match.left+best_match.w/2
+                trash_y = 1.0 - (best_match.top+best_match.h/2) # 0 is bottom, 1 is top
+                
+                error_x = self.setpoint_x - trash_x
+                error_y = self.setpoint_y - trash_y
+                dist = math.sqrt((error_x)**2 + (error_y)**2)
+                det.err = (error_x, error_y)
+                det.dist=dist
+                trash_to_pick.append(det)
+        if trash_to_pick is not None and len(trash_to_pick) > 0:
             # sort by confidence
-            trash_to_follow.sort(key=lambda x: x.confidence, reverse=True)
+            trash_to_pick.sort(key=lambda x: x.dist, reverse=False)
             # approach trash
-            best_match = trash_to_follow[0]
-            trash_x = best_match.left+best_match.w/2
-            trash_y = 1.0 - (best_match.top+best_match.h/2) # 0 is bottom, 1 is top
-            
-            error_x = self.setpoint_x - trash_x
-            error_y = self.setpoint_y - trash_y
+            best_match = trash_to_pick[0]
 
-            return (error_x, error_y)
+            return best_match
         return None
 
 
@@ -112,10 +117,10 @@ class AdaptivePickupController(RobotController):
             if self.debug_auto_offset and (self.debug_traj_pos<0.25 or self.traj_is_dirty):
                 self.traj_is_dirty=False
                 # auto estimate the trajectory offsets:
-                err = self.autoset_target_offset(robot, detections)
-                if err is not None:
-                    offsets = (min(0.1, max(-0.1,err[0]*-self.target_factor_x)), min(0.1, max(-0.1,err[1]*-self.target_factor_y)))
-                    logger.debug(f"Auto estimate pickup trajectory with offsets {offsets}, err is {err}")
+                det = self.autoset_target_offset(robot, detections)
+                if det is not None:
+                    offsets = (min(0.1, max(-0.1,det.err[0]*-self.target_factor_x)), min(0.1, max(-0.1,det.err[1]*-self.target_factor_y)))
+                    logger.debug(f"Auto estimate pickup trajectory with offsets {offsets}, err is {det.err}")
                     self.debug_traj_pick = robot.arm._interpolate_traj("pickup", offsets)
                     self.debug_traj_toss = robot.arm._interpolate_traj("toss", offsets)
 

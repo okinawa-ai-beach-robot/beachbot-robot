@@ -23,7 +23,7 @@ class ApproachDebris(RobotController):
 
         # Initial target setpoints, in relative position (0..1)
         default_setpoint_x = 0.5
-        default_setpoint_y = 0.6 # 0.6 is good for current simulation file
+        default_setpoint_y = 0.63 # 0.63 is good for current simulation file
 
 
         # pid_error_threshold to decide if target is reached, coordinates in relative position (0..1)
