@@ -45,6 +45,13 @@ class HasProperties(object):
 
 
     def register_child_properties(self, class_instance : HasProperties, class_name : str):
+        # Remove previous entries (if any)
+        for key in list(self._properties.keys()):
+            # Check if the key starts with the letter class_name + "."
+            if key.startswith(class_name + "."):
+                # remove it from the dictionary
+                del self._properties[key]
+
         # Collect all properties of the given subclass and add to this class
         for name_property in class_instance.list_property_names():
             prop_default_val = class_instance.get_property(name_property)
@@ -54,7 +61,8 @@ class HasProperties(object):
             if prop_bounds is not None:
                 prop_min, prop_max = prop_bounds
             self._properties_children[class_name] = class_instance
-            self.register_property(class_name + "." + name_property, prop_default_val, max_value=prop_max, min_value=prop_min)
+
+            #self.register_property(class_name + "." + name_property, prop_default_val, max_value=prop_max, min_value=prop_min)
 
 
 
@@ -133,7 +141,13 @@ class HasProperties(object):
 
     def list_property_names(self)->List[str]:
         with self._properties_lock:
-            return list(self._properties.keys())
+            reslist = list(self._properties.keys())
+        for child in self._properties_children.keys():
+            childlist = self._properties_children[child].list_property_names()
+            for entry in childlist:
+                reslist.append(str(child)+"."+entry)
+        return reslist
+
         
 
 
