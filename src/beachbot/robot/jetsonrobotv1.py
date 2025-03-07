@@ -42,6 +42,7 @@ class JetsonRobotV1(RobotInterface):
         self.arm : arm = RoArmM1_Custom3FingerGripper()
 
     def stop(self):
+        super().stop()
         print("TODO: Stop robot")
     
     
