@@ -26,8 +26,19 @@ echo $USER
 #su beachbot -c 'nohup python /home/beachbot/src/python-interface/app/nicegui_controller.py &'
 #su beachbot -c 'python /home/beachbot/src/python-interface/app/nicegui_controller.py' &
 #python /home/beachbot/src/python-interface/app/nicegui_controller.py
-su beachbot -c 'python /home/beachbot/src/python-interface/app/nicegui_controller.py'
-echo "done?!"
+
+#output=($(python -c "import beachbot; print(beachbot.__path__[0])"))
+output=($(su beachbot -c "python -c \"import beachbot; print(beachbot.__path__[0])\""))
+echo $output
+
+export BEACHBOT_HOME="/home/beachbot/OIST_BC/"
+export BEACHBOT_CACHE=${BEACHBOT_HOME}/Cache
+export BEACHBOT_CONFIG=${BEACHBOT_HOME}/Config
+export BEACHBOT_LOGS=${BEACHBOT_HOME}/Logs
+export BEACHBOT_MODELS=${BEACHBOT_HOME}/Models
+export BEACHBOT_DATASETS=${BEACHBOT_HOME}/Datasets
+su beachbot -c "python ${output}/../../app/autostart.py"
+#echo "done?!"
 fi
 
 

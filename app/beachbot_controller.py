@@ -98,6 +98,8 @@ parser.add_argument("--cfgload", default=False, action="store_true", help="Reloa
 args = parser.parse_args()
 
 
+print("Beachbot startup\n config:\n", vars(config))
+
 target_obj="none"
 
 
@@ -391,9 +393,8 @@ async def grab_video_frame() -> Response:
     if frame is None:
         return placeholder
     
-
-    # `convert` is a CPU-intensive function, so we run it in a separate process to avoid blocking the event loop and GIL.
-    jpeg = await run.cpu_bound(convert, frame)
+    # `convert` is a CPU-intensive function, so we run it in a separate process to avoid blocking the event loop and GIL. TODO cpu_bound blocks infinitely
+    jpeg = await run.io_bound(convert, frame)
     video_image.content = boxsvg
     return Response(content=jpeg, media_type="image/jpeg")
 
@@ -603,6 +604,8 @@ signal.signal(signal.SIGINT, handle_sigint)
 # Cleanup routins on app shutdown
 async def cleanup() -> None:
     # disconnect clients when the app is stopped with Ctrl+C
+    robot.stop()
+    robot.cleanup()
     await disconnect()
 
     print("Exit, cleaning up...")
