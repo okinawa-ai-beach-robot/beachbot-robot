@@ -3,17 +3,24 @@ from pathlib import Path
 import numpy as np
 import math
 from beachbot.config import config, logger
+from beachbot.utils.properties import HasProperties
 from beachbot.assets import get_asset_path
 import threading
 from scipy import signal
 
 
-class Arm:
+class Arm(HasProperties):
 
     def __init__(self, gripper_limits=None) -> None:
-        self.basepath = config.BEACHBOT_HOME
+        super().__init__()
 
+        self.debug=True
+        self.register_property("debug") 
+
+        self.basepath = config.BEACHBOT_HOME
         self.offsets = None
+
+
 
 
         # Robot arm definition (mechanical structure):
@@ -469,8 +476,9 @@ class Arm:
                 return True
             if time() - t_start > timeout:
                 return False
-            logger.debug("Distance to target: " + str(dist))
-            logger.debug("Error in joint angles: " + str(qs - qs_target))
+            if self.debug:
+                logger.debug("Distance to target: " + str(dist))
+                logger.debug("Error in joint angles: " + str(qs - qs_target))
             sleep(polling_interval)
 
 
