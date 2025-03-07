@@ -128,8 +128,8 @@ class JetsonMotor(Motor):
 
     def cleanup(self):
         self.turn_off()
-        if GPIO._gpio_mode is not None:
-            try:
-                GPIO.cleanup()
-            except Exception as ex:
-                logger.error("GPIO cleanup failed (bug in GPIO?)")
+        # Does not exist on jetson TODO: if GPIO._gpio_mode is not None:
+        try:
+            GPIO.cleanup()
+        except Exception as ex:
+            logger.error("GPIO cleanup failed (bug in GPIO?)")

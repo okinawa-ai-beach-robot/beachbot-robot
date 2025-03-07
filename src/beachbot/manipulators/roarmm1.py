@@ -50,7 +50,7 @@ class RoArmM1(Arm):
                 time.sleep(self.interval - functime)
             else:
                 logger.error(
-                    "Error: refresh_robot_state took longer to run than interva.(" + str(functime) + "," + str(self.interval) + ")"
+                    "Error: refresh_robot_state took longer to run than interval. (" + str(functime) + "," + str(self.interval) + ")"
                 )
 
     def write_io(self, data):

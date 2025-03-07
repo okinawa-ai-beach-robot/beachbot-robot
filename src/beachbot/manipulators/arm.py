@@ -455,7 +455,7 @@ class Arm(HasProperties):
         pass
 
     def wait_joint_target_arrival(
-        self, max_distance=10.0, timeout=10, polling_interval=0.1
+        self, max_distance=20.0, timeout=10, polling_interval=0.1
     ):
         """
         Wait until actual joint angles are within the target range or timeout.

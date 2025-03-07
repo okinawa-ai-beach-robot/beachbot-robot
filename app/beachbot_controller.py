@@ -100,6 +100,8 @@ parser.add_argument("--cfgload", default=False, action="store_true", help="Reloa
 args = parser.parse_args()
 
 
+print("Beachbot startup\n config:\n", vars(config))
+
 target_obj="none"
 
 
@@ -184,12 +186,21 @@ def ui_model_info(robot : RobotInterface):
         ui.label(f"Controller: {controller.__class__.__name__}")
     else:
          ui.label("Controller: None")
+    ui.space()
+    controller = robot.get_controller()
+    if controller is not None:
+        ui.label(f"Controller: {controller.__class__.__name__}")
+    else:
+         ui.label("Controller: None")
 
 
+async def toggle_detection(ai_model=Yolo5TorchHub):
 async def toggle_detection(ai_model=Yolo5TorchHub):
     global video_image
     global video_image
     video_image.content = ""
+    print("Detection:", ai_model)
+    if ai_model is not None:
     print("Detection:", ai_model)
     if ai_model is not None:
         robot.set_detector(ai_model())
@@ -210,9 +221,30 @@ async def toggle_controller(robot_controller=ControllerSelector):
     print("Controller:", robot_controller)
 
 
+async def toggle_controller(robot_controller=ControllerSelector):
+    if robot_controller is not None:
+        robot.set_controller(robot_controller())
+    else:
+        robot.set_controller(None)
+    ui_model_info.refresh(robot)
+    ui_config_panel.refresh()
+    print("Controller:", robot_controller)
+
+
 
 def update_target_obj(robot : RobotInterface) -> None:
     global target_obj
+    propbe_props = ["controller.approach.targetfilter", "controller.targetfilter"]
+
+    for prop in propbe_props:
+        try:
+            val = robot.get_property(prop)
+            if val is not None:
+                target_obj = str(val).split(",")
+                return
+        except ValueError:
+            # Controller not loaded, do not update
+            pass
     propbe_props = ["controller.approach.targetfilter", "controller.targetfilter"]
 
     for prop in propbe_props:
@@ -287,6 +319,13 @@ def ui_config_panel(robot : RobotInterface) -> None:
 
 
 
+# def toggle_control(doit):
+#     if doit:
+#         robot.set_controller(MyController())
+#         ui_config_panel.refresh(robot)
+#     else:
+#         robot.set_controller(None)
+#         ui_config_panel.refresh(robot)
 # def toggle_control(doit):
 #     if doit:
 #         robot.set_controller(MyController())
@@ -392,9 +431,8 @@ async def grab_video_frame() -> Response:
     if frame is None:
         return placeholder
     
-
-    # `convert` is a CPU-intensive function, so we run it in a separate process to avoid blocking the event loop and GIL.
-    jpeg = await run.cpu_bound(convert, frame)
+    # `convert` is a CPU-intensive function, so we run it in a separate process to avoid blocking the event loop and GIL. TODO cpu_bound blocks infinitely
+    jpeg = await run.io_bound(convert, frame)
     video_image.content = boxsvg
     return Response(content=jpeg, media_type="image/jpeg")
 
@@ -414,9 +452,18 @@ with tab_panel:
                 with ui.row().classes("w-full"):
                     with ui.dropdown_button('Select Model', auto_close=True) as model_selector:
                         ui.item("Detection Off", on_click=lambda: toggle_detection(None))
+                    with ui.dropdown_button('Select Model', auto_close=True) as model_selector:
+                        ui.item("Detection Off", on_click=lambda: toggle_detection(None))
                         for model in model_list:
                             ui.item(str(model.__name__), on_click=lambda m=model: toggle_detection(m))
+                            ui.item(str(model.__name__), on_click=lambda m=model: toggle_detection(m))
                     ui.space()
+                    with ui.dropdown_button('Select Controller', auto_close=True) as controller_selector:
+                        controller_list
+                        ui.item("Control Off", on_click=lambda: toggle_controller(None))
+                        for controller in controller_list:
+                            ui.item(str(controller.__name__), on_click=lambda m=controller: toggle_controller(m))
+                    #do_control = ui.switch('Robot Control', on_change=lambda x: toggle_control(x.value))
                     with ui.dropdown_button('Select Controller', auto_close=True) as controller_selector:
                         controller_list
                         ui.item("Control Off", on_click=lambda: toggle_controller(None))
@@ -577,6 +624,8 @@ def load_config():
     ui_model_info.refresh()
     model_selector.set_value(None)
     controller_selector.set_value(None)
+    model_selector.set_value(None)
+    controller_selector.set_value(None)
     print("controller is", robot.get_controller())
     logger.info(f"Robot Config loaded from {robot_config_filename}")
 
@@ -605,6 +654,8 @@ signal.signal(signal.SIGINT, handle_sigint)
 # Cleanup routins on app shutdown
 async def cleanup() -> None:
     # disconnect clients when the app is stopped with Ctrl+C
+    robot.stop()
+    robot.cleanup()
     await disconnect()
 
     print("Exit, cleaning up...")
