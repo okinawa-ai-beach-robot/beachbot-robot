@@ -230,7 +230,7 @@ def update_target_obj(robot : RobotInterface) -> None:
 def update_string_prop(robot : RobotInterface, name, val):
     global target_obj
     robot.set_property(name, val)
-    if name == "controller.approach.targetfilter":
+    if name == "controller.approach.targetfilter" or name == "controller.targetfilter":
         target_obj = str(val).split(",")
 
 
@@ -489,6 +489,7 @@ with tab_panel:
                         with ui.row():
                             btn_store = ui.button("Store Config")
                             btn_load = ui.button("Load Config")
+                            ui.button("Refresh", on_click=lambda _: ui_config_panel.refresh())
                         ui_config_panel(robot)
 
             with splitter.after:
