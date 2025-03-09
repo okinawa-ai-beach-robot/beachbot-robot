@@ -15,7 +15,8 @@ class AdaptivePickupController(RobotController):
         self.timeoutcounter=100
 
         self.setpoint_x = 0.5
-        self.setpoint_y = 0.63 # 0.63 is good for current simulation file
+        #self.setpoint_y = 0.63 # 0.63 is good for current simulation file
+        self.setpoint_y = 0.28 # 0.28 is good for robot lowr edge
         self.register_property("setpoint_x", descr="Horizontal taget position in relative image coordinates, e.g. 0.25 is left quarter of image; 0.5 is image center.")
         self.register_property("setpoint_y", descr="Vertical target position in rleative image coordinates, e.g. 0.25 is lower quarter of image; 0.5 is image center.")
 
@@ -76,7 +77,7 @@ class AdaptivePickupController(RobotController):
             if det.class_name in self.targetfilter:
                 
                 trash_x = det.left+det.w/2
-                trash_y = 1.0 - (det.top+det.h/2) # 0 is bottom, 1 is top
+                trash_y = 1.0 - (det.top+det.h) # 0 is bottom, 1 is top, trash lower y position is position on ground!
 
                 det.obj_pos=(trash_x, trash_y)
                 
@@ -120,22 +121,29 @@ class AdaptivePickupController(RobotController):
         
 
 
-        if det is None:
-            # No object in sight, can not pick up!
-            return RESULT.FAILURE
-        
-        # Estimate pickup offset
-        offsets = (det.err[0]*-self.target_factor_x, det.err[1]*-self.target_factor_y)
 
-        # Is the object reachable?
-        obj_is_reachable = (offsets[0]>=-0.1 and offsets[0]<=0.1 and offsets[1]>=-0.1 and offsets[1]<=0.1)
+        if det is not None:
+            # Estimate pickup offset
+            offsets = (det.err[0]*-self.target_factor_x, det.err[1]*-self.target_factor_y)
 
-        # bound reaching offset to valid ones
-        offsets = (min(0.1, max(-0.1,det.err[0]*-self.target_factor_x)), min(0.1, max(-0.1,det.err[1]*-self.target_factor_y)))
+            # Is the object reachable?
+            obj_is_reachable = (offsets[0]>=-0.1 and offsets[0]<=0.1 and offsets[1]>=-0.1 and offsets[1]<=0.1)
+
+            # bound reaching offset to valid ones
+            offsets = (min(0.1, max(-0.1,det.err[0]*-self.target_factor_x)), min(0.1, max(-0.1,det.err[1]*-self.target_factor_y)))
+        else:
+            offsets=(0,0)
+            obj_is_reachable=False
+            offsets=(0,0)
+
 
         if not self.debug:
             # Normal operation, initiate pickup sequence
             # Create thread for arm movement, return, to not block controller loop
+
+            if det is None:
+                # No object in sight, can not pick up!
+                return RESULT.FAILURE
 
             # Wait maximum of self.timeoutcounter steps to get ready for pickup, otherwise return failure
             self.timeoutcounter -= 1
