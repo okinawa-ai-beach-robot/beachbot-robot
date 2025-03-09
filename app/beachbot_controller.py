@@ -27,7 +27,9 @@ if platform.system() == "Linux":
     # Force libgomp to be loaded before other libraries consuming dynamic TLS (to avoid running out of STATIC_TLS)
     # Avoids error: "...libGLdispatch.so.0: cannot allocate memory in static TLS block"
     # Occurs on Jetson
-    #preload_lib = Path("/lib/aarch64-linux-gnu/libGLdispatch.so.0")
+    preload_lib = Path("/lib/aarch64-linux-gnu/libGLdispatch.so.0")
+    if preload_lib.is_file():
+        ctypes.cdll.LoadLibrary(preload_lib.absolute().as_posix())
     preload_lib = Path("/home/beachbot/.local/lib/python3.8/site-packages/torch.libs/libgomp-804f19d4.so.1.0.0")
     if preload_lib.is_file():
         ctypes.cdll.LoadLibrary(preload_lib.absolute().as_posix())
@@ -186,21 +188,12 @@ def ui_model_info(robot : RobotInterface):
         ui.label(f"Controller: {controller.__class__.__name__}")
     else:
          ui.label("Controller: None")
-    ui.space()
-    controller = robot.get_controller()
-    if controller is not None:
-        ui.label(f"Controller: {controller.__class__.__name__}")
-    else:
-         ui.label("Controller: None")
+
 
 
 async def toggle_detection(ai_model=Yolo5TorchHub):
-async def toggle_detection(ai_model=Yolo5TorchHub):
-    global video_image
     global video_image
     video_image.content = ""
-    print("Detection:", ai_model)
-    if ai_model is not None:
     print("Detection:", ai_model)
     if ai_model is not None:
         robot.set_detector(ai_model())
@@ -221,30 +214,9 @@ async def toggle_controller(robot_controller=ControllerSelector):
     print("Controller:", robot_controller)
 
 
-async def toggle_controller(robot_controller=ControllerSelector):
-    if robot_controller is not None:
-        robot.set_controller(robot_controller())
-    else:
-        robot.set_controller(None)
-    ui_model_info.refresh(robot)
-    ui_config_panel.refresh()
-    print("Controller:", robot_controller)
-
-
 
 def update_target_obj(robot : RobotInterface) -> None:
     global target_obj
-    propbe_props = ["controller.approach.targetfilter", "controller.targetfilter"]
-
-    for prop in propbe_props:
-        try:
-            val = robot.get_property(prop)
-            if val is not None:
-                target_obj = str(val).split(",")
-                return
-        except ValueError:
-            # Controller not loaded, do not update
-            pass
     propbe_props = ["controller.approach.targetfilter", "controller.targetfilter"]
 
     for prop in propbe_props:
@@ -319,13 +291,6 @@ def ui_config_panel(robot : RobotInterface) -> None:
 
 
 
-# def toggle_control(doit):
-#     if doit:
-#         robot.set_controller(MyController())
-#         ui_config_panel.refresh(robot)
-#     else:
-#         robot.set_controller(None)
-#         ui_config_panel.refresh(robot)
 # def toggle_control(doit):
 #     if doit:
 #         robot.set_controller(MyController())
@@ -452,18 +417,9 @@ with tab_panel:
                 with ui.row().classes("w-full"):
                     with ui.dropdown_button('Select Model', auto_close=True) as model_selector:
                         ui.item("Detection Off", on_click=lambda: toggle_detection(None))
-                    with ui.dropdown_button('Select Model', auto_close=True) as model_selector:
-                        ui.item("Detection Off", on_click=lambda: toggle_detection(None))
                         for model in model_list:
                             ui.item(str(model.__name__), on_click=lambda m=model: toggle_detection(m))
-                            ui.item(str(model.__name__), on_click=lambda m=model: toggle_detection(m))
                     ui.space()
-                    with ui.dropdown_button('Select Controller', auto_close=True) as controller_selector:
-                        controller_list
-                        ui.item("Control Off", on_click=lambda: toggle_controller(None))
-                        for controller in controller_list:
-                            ui.item(str(controller.__name__), on_click=lambda m=controller: toggle_controller(m))
-                    #do_control = ui.switch('Robot Control', on_change=lambda x: toggle_control(x.value))
                     with ui.dropdown_button('Select Controller', auto_close=True) as controller_selector:
                         controller_list
                         ui.item("Control Off", on_click=lambda: toggle_controller(None))
@@ -622,8 +578,6 @@ def load_config():
     robot.load_properties(robot_config_filename)
     ui_config_panel.refresh()
     ui_model_info.refresh()
-    model_selector.set_value(None)
-    controller_selector.set_value(None)
     model_selector.set_value(None)
     controller_selector.set_value(None)
     print("controller is", robot.get_controller())
