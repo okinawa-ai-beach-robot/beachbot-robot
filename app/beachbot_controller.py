@@ -6,9 +6,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 from datetime import datetime
-import io
-
-import io
+import io, os
 
 
 import beachbot.manipulators
@@ -329,7 +327,8 @@ def joystick_end():
 
 def sys_shutdown():
     print("Bye bye ...")
-    beachbot.utils.shutdown()
+    print("TODO hardcoded password!!")
+    os.system("echo beachbot | sudo -S poweroff")
 
 
 def change_media(file):
