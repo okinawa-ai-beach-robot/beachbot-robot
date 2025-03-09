@@ -38,7 +38,7 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         # The maximum value change per second of the contorl values (set_target)..
         # Values from set_target are gradually reached instaed of instantanously 
         # Meant to avoid quick back-forth movements or other unrealistic accelerations by the robot
-        self.max_rate_of_change = 100
+        self.max_rate_of_change = 400
 
         self._motor_left_speed = 0
         self._motor_right_speed = 0
