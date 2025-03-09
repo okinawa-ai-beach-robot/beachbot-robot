@@ -30,7 +30,7 @@ class RoArmM1(Arm):
                     serial_port, timeout=0, baudrate=115200
                 )  # open serial port
                 # self.device.open()
-                self.write_dspl("Beachbot", "Python connected!")
+                self.write_dspl("Beachbot", "Python connected!", str(time.strftime("%m/%d/%Y, %H:%M:%S")))
                 self.is_connected = self.device.isOpen()
 
             except Exception as e:
