@@ -1,4 +1,5 @@
 import math
+import time
 from typing import List
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.robotcontroller import RobotController, BoxDef
@@ -117,13 +118,18 @@ class ApproachDebris(RobotController):
 
             if abs(dir_error_x) < self.pid_error_threshold_x and abs(dir_error_y) < self.pid_error_threshold_y:
                 self.target_arrival_frames += 1
+                robot.set_target_velocity(0, 0)
                 if self.target_arrival_frames > 30:
-                    robot.set_target_velocity(0, 0)
+                    
                     logger.info("ApproachDebris: Target reached")
                     return RESULT.SUCCESS
 
         else:
             self.missing_target_count += 1
+
+            if self.debug:
+                print("could not see anything!", self.missing_target_count)
+            
             if self.missing_target_count > 10:
                 # Rotate robot, TODO add a 3rd controller for "random seach"
                 # TODO return RESULT.FAILURE to indicate controller selector to handle the situation appropriately
