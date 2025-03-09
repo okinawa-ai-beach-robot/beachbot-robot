@@ -141,6 +141,8 @@ class RobotInterface(HasProperties):
                 else:
                     logger.warning("_run_vision_loop: Frame skipped")
             target_interval = 1/self.ctrl_loop_target_hz
+            if self.debug:
+                logger.debug(f"Vision/control loop interval is {self.ctrl_loop_timer.get_last_interval()}, target is {target_interval}")
             if self.ctrl_loop_timer.get_last_interval()<target_interval:
                 # Limit control loop to not exceed self.ctrl_loop_target_hz update rate
                 time.sleep(target_interval - self.ctrl_loop_timer.get_last_interval())
