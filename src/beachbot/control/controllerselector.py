@@ -50,7 +50,7 @@ class ControllerSelector(RobotController):
                 logger.info("approachDebris done, switching to pickup...")
                 self.controller = self.controllers["pickup"]
         elif self.controller is self.controllers["pickup"]:
-            if self.controller.update(robot, detections) == RESULT.SUCCESS:
+            if self.controller.update(robot, detections) != RESULT.BUSY:
                 logger.info("pickup done, switching to approachDebris...")
                 self.controller = self.controllers["approach"]
 
