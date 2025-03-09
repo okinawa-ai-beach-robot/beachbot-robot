@@ -143,6 +143,7 @@ class AdaptivePickupController(RobotController):
 
             if det is None:
                 # No object in sight, can not pick up!
+                logger.info("can not see object for pickup! (Adaptive picker)")
                 return RESULT.FAILURE
 
             # Wait maximum of self.timeoutcounter steps to get ready for pickup, otherwise return failure
@@ -179,9 +180,10 @@ class AdaptivePickupController(RobotController):
                 logger.debug(f"Recalculate pickup trajectory with offsets {(self.debug_offset_x, self.debug_offset_y)}")
                 self.debug_traj_pick = robot.arm._interpolate_traj("pickup", (self.debug_offset_x, self.debug_offset_y))
                 self.debug_traj_toss = robot.arm._interpolate_traj("toss", (self.debug_offset_x, self.debug_offset_y))
-            elif self.debug_auto_offset and self.debug_traj_pos<0.25:
+            elif (self.debug_auto_offset and self.debug_traj_pos<0.25) or self.debug_traj_pick is None or self.debug_traj_toss is None:
                 # Automatic estimation of offset only at the beginning of trajectory as later the object is covered by the gripper
-                logger.debug(f"Auto estimate pickup trajectory with offsets {offsets}, err is {det.err}")
+                if det is not None:
+                    logger.debug(f"Auto estimate pickup trajectory with offsets {offsets}, err is {det.err}")
                 self.debug_traj_pick = robot.arm._interpolate_traj("pickup", offsets)
                 self.debug_traj_toss = robot.arm._interpolate_traj("toss", offsets)
 
