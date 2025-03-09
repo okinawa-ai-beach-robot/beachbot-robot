@@ -37,8 +37,11 @@ export BEACHBOT_CONFIG=${BEACHBOT_HOME}/Config
 export BEACHBOT_LOGS=${BEACHBOT_HOME}/Logs
 export BEACHBOT_MODELS=${BEACHBOT_HOME}/Models
 export BEACHBOT_DATASETS=${BEACHBOT_HOME}/Datasets
-su beachbot -c "python ${output}/../../app/autostart.py"
-#echo "done?!"
+su beachbot -c "cd ${output}/../../app; pwd"
+su beachbot -c "cd ${output}/../../app; python autostart.py"
+
+echo "Beachbot done"
+
 fi
 
 
