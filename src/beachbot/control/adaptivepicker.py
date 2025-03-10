@@ -5,18 +5,22 @@ from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.robotcontroller import RobotController, BoxDef 
 from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.config import logger
+from beachbot.utils.timer import Timer
 
 
 class AdaptivePickupController(RobotController):
     def __init__(self):
         super().__init__()
         self.arm_thread=None
-        self.pos_waitcounter=10
-        self.timeoutcounter=100
+        self.stable_time=1.0 # one second object observation without interruption before picking up
+        self.timout_time=10.0 # if finding sable object takes mote than 20 seconds, abort ... 
+
+        self.manual_mode=False
+        self.register_property("manual_mode", descr="Do not pickup automatically, wait for user properties changes")
 
         self.setpoint_x = 0.5
         #self.setpoint_y = 0.63 # 0.63 is good for current simulation file
-        self.setpoint_y = 0.28 # 0.28 is good for robot lowr edge
+        self.setpoint_y = 0.26 # 0.28 is good for robot lowr edge
         self.register_property("setpoint_x", descr="Horizontal taget position in relative image coordinates, e.g. 0.25 is left quarter of image; 0.5 is image center.")
         self.register_property("setpoint_y", descr="Vertical target position in rleative image coordinates, e.g. 0.25 is lower quarter of image; 0.5 is image center.")
 
@@ -42,11 +46,16 @@ class AdaptivePickupController(RobotController):
         self.targetfilter=["cup","toilet", "sports ball", "blue_blob"]
         self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
         
+        self.arm_speedfactor = 5
+        self.register_property("arm_speedfactor", min_value=5, max_value=30, descr="Speed factor, adjusting of robot arm movement speed.")
 
 
         self.debug_traj_pick = None
         self.debug_traj_toss = None
         self.traj_is_dirty=True
+
+        self.stable_timer = None
+        self.timeout_timer = None
 
 
     def property_changed_callback(self, name):
@@ -58,14 +67,15 @@ class AdaptivePickupController(RobotController):
 
             
 
-    def operate_arm(self, robot: RobotInterface, offset=(0,0), speed_factor=20):
+    def operate_arm(self, robot: RobotInterface, offset=(0,0)):
         logger.debug(f"Recalculate pickup trajectory with offsets {offset}")
         traj_pick = robot.arm._interpolate_traj("pickup", offset)
         traj_toss = robot.arm._interpolate_traj("toss", offset)
         logger.info("Execute: pickup")
-        robot.arm.replay_trajectory(traj_pick.qs, traj_pick.ts, speed_factor=speed_factor)
+        # TODO for now do not use interpolated trajectories, recordings depend on os time (estimate proper sim time is todo)
+        robot.arm.replay_trajectory(traj_pick.qs, robot.arm.pickup_trajectory.ts, speed_factor=self.arm_speedfactor)
         logger.info("Execute: tossing")
-        robot.arm.replay_trajectory(traj_toss.qs, traj_toss.ts, speed_factor=speed_factor)
+        robot.arm.replay_trajectory(traj_toss.qs, robot.arm.toss_trajectory.ts, speed_factor=self.arm_speedfactor)
         robot.arm.go_home()
 
     def autoset_target_offset(self, robot: RobotInterface, detections: List[BoxDef] = None):
@@ -95,6 +105,16 @@ class AdaptivePickupController(RobotController):
 
             return best_match
         return None
+    
+    def _cleanup(self):
+        """
+        Reset Controller to inital state (start sesuring time from scratch next time update is called)
+        """
+        self.timeout_timer=None
+        self.stable_timer=None
+
+   
+
 
 
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
@@ -109,6 +129,7 @@ class AdaptivePickupController(RobotController):
                 # Done, we are not busy anymore with pickup, delete thread for arm movement
                 self.arm_thread = None
 
+                self._cleanup()
                 #expect that object disappeared for success:
                 if det is None:
                     return RESULT.SUCCESS
@@ -132,43 +153,55 @@ class AdaptivePickupController(RobotController):
             # bound reaching offset to valid ones
             offsets = (min(0.1, max(-0.1,det.err[0]*-self.target_factor_x)), min(0.1, max(-0.1,det.err[1]*-self.target_factor_y)))
         else:
+            # No object detected:
             offsets=(0,0)
             obj_is_reachable=False
             offsets=(0,0)
 
 
-        if not self.debug:
+        if not self.manual_mode:
             # Normal operation, initiate pickup sequence
             # Create thread for arm movement, return, to not block controller loop
 
-            if det is None:
-                # No object in sight, can not pick up!
-                logger.info("can not see object for pickup! (Adaptive picker)")
-                return RESULT.FAILURE
 
-            # Wait maximum of self.timeoutcounter steps to get ready for pickup, otherwise return failure
-            self.timeoutcounter -= 1
-            if self.timeoutcounter<1:
-                logger.info(f"Adaptive pickup controller can not reach object at {det.obj_pos} with pickup offsets {offsets}")
-                self.timeoutcounter = 100
+            # Measure time since first call of controller
+            if self.timeout_timer is None:
+                self.timeout_timer = Timer().start()
+            if self.stable_timer is None:
+                self.stable_timer = Timer().start()
+
+
+            # if det is None or not reachable, wait for a certain amount of time
+            # Restart the timer counting time since first appearance of object
+            if det is None or not obj_is_reachable:
+                self.stable_timer.start()
+
+
+            if self.timeout_timer.measure()>self.timout_time:
+                # timeout during finding object occured, abort.
+                if self.debug:
+                    if det is not None:
+                        logger.info(f"Adaptive pickup controller can not reach object at {det.obj_pos} with pickup offsets {offsets}")
+                    else:
+                        logger.info("Adaptive Picker could not find object (timeout)")
+                self._cleanup()
                 return RESULT.FAILURE
             
-            if not obj_is_reachable:
-                # can not reach object with arm
-                # reset waittime
-                self.pos_waitcounter=10
-                return RESULT.BUSY
-            
-            if self.pos_waitcounter>0:
-                self.pos_waitcounter -= 1
-            else:
-                # if object was pickable for self.pos_waitcounter steps (stable) in a row, pick it up!
-                self.pos_waitcounter=10
-                self.timeoutcounter = 100
+
+
+                
+            if self.stable_timer.measure()>self.stable_time:
+                # We observed target for a certain amount of time, without interruption.
+                # Proceed with pickup
                 logger.debug(f"Initiate pickup of object at {det.obj_pos} with pickup offsets {offsets}")
                 self.arm_thread = Thread(target=lambda r=robot:self.operate_arm(robot=r, offset=offsets))
                 self.arm_thread.start()
+                self._cleanup()
+                # Pickup thread in progress, indicate busy controller
             return RESULT.BUSY
+
+
+
         
         else:
             # Debug mode, manual operation
@@ -177,13 +210,14 @@ class AdaptivePickupController(RobotController):
             if self.traj_is_dirty==True and not self.debug_auto_offset:
                 #Manual estimation of offsets
                 self.traj_is_dirty=False
-                logger.debug(f"Recalculate pickup trajectory with offsets {(self.debug_offset_x, self.debug_offset_y)}")
+                if self.debug:
+                    logger.debug(f"Recalculate pickup trajectory with offsets {(self.debug_offset_x, self.debug_offset_y)}")
                 self.debug_traj_pick = robot.arm._interpolate_traj("pickup", (self.debug_offset_x, self.debug_offset_y))
                 self.debug_traj_toss = robot.arm._interpolate_traj("toss", (self.debug_offset_x, self.debug_offset_y))
             elif (self.debug_auto_offset and self.debug_traj_pos<0.25) or self.debug_traj_pick is None or self.debug_traj_toss is None:
                 # Automatic estimation of offset only at the beginning of trajectory as later the object is covered by the gripper
-                if det is not None:
-                    logger.debug(f"Auto estimate pickup trajectory with offsets {offsets}, err is {det.err}")
+                if det is not None and self.debug:
+                    logger.debug(f"Auto estimate pickup trajectory with offsets {offsets}, err is {det.err}, pos is {det.obj_pos}")
                 self.debug_traj_pick = robot.arm._interpolate_traj("pickup", offsets)
                 self.debug_traj_toss = robot.arm._interpolate_traj("toss", offsets)
 
@@ -200,8 +234,7 @@ class AdaptivePickupController(RobotController):
 
 
             # Reset waitcounter in case we switch back to automatic mode:
-            self.timeoutcounter = 100
-            self.pos_waitcounter = 10
+            self._cleanup()
             return RESULT.BUSY
 
 
