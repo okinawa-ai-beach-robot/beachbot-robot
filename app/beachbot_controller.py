@@ -154,6 +154,17 @@ def arm_action_cartesian():
     robot.arm.set_cart_pos([x,y,z], r)
     
     
+def arm_calib_init():
+    robot.arm.calib_init()
+def arm_calib_free():
+    robot.arm.calib_free()
+def arm_calib_lock():
+    robot.arm.calib_lock()
+def arm_calib_save():
+    robot.arm.calib_save()
+        
+
+
 
 def arm_action_home():
     print("Arm go home")
@@ -165,7 +176,7 @@ def arm_action_zero():
     robot.arm.go_zero()
 
 def arm_action_calib():
-    print("Arm go zero")
+    print("Arm go claib")
     robot.arm.go_calib()
 
 async def arm_action_test():
@@ -469,10 +480,14 @@ with tab_panel:
                         coordinates = ui.label("0, 0")
                     with ui.tab_panel(two_ctrl):
                         ui.label("test")
-                        ui.button("Go Home", on_click=lambda x: arm_action_home())
-                        ui.button("Go Calib", on_click=lambda x: arm_action_calib())
-                        ui.button("Go Zero", on_click=lambda x: arm_action_zero())
-                        ui.button("Go Test", on_click=lambda x: arm_action_test())
+                        ui.button("Go Calib Pose", on_click=lambda x: arm_calib_init())
+                        ui.button("Free Joint", on_click=lambda x: arm_calib_free())
+                        ui.button("Lock Joint", on_click=lambda x: arm_calib_lock())
+                        ui.button("Save Calib Pose", on_click=lambda x: arm_calib_save())
+                        # ui.button("Go Home", on_click=lambda x: arm_action_home())
+                        # ui.button("Go Calib", on_click=lambda x: arm_action_calib())
+                        # ui.button("Go Zero", on_click=lambda x: arm_action_zero())
+                        # ui.button("Go Test", on_click=lambda x: arm_action_test())
                     with ui.tab_panel(three_ctrl):
                         ui.button("Activate", on_click=lambda x: arm_action_cartesian())
                         with ui.row().classes("w-full justify-between no-wrap"):
