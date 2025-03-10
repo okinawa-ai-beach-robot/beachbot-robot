@@ -19,7 +19,7 @@ class Timer:
         self.median=0
         self.quantile=0
         self.p=p
-        self.interval=-1
+        self.interval=-1.0
 
     def _add_sample(self, x):
 
@@ -60,13 +60,21 @@ class Timer:
     
 
     def __enter__(self):
-        self.start = time.perf_counter()
+        self._start = time.perf_counter()
         return self
 
+
     def __exit__(self, *args):
-        self.end = time.perf_counter()
-        self.interval = self.end - self.start
+        self._end = time.perf_counter()
+        self.interval = self._end - self._start
         self._add_sample(self.interval)
+
+    
+    def start(self):
+        return self.__enter__()
+    def measure(self):
+        self.__exit__()
+        return self.get_last_interval()
 
     def __repr__(self):
         return f"<Timer median:{self.median} quantile:{self.quantile} n:{self.n} p:{self.p} K:{self.K} Ex:{self.Ex} Ex2:{self.Ex2}>"
