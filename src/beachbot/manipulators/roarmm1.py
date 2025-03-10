@@ -170,6 +170,15 @@ class RoArmM1(Arm):
         else:
             self.write_io('{"T":9,"P1":7}\n')
 
+    def calib_init(self):
+        self.write_io('{"T":9,"P1":6}\n')
+    def calib_free(self):
+        self.write_io('{"T":9,"P1":2,"P2":0}\n')
+    def calib_lock(self):
+        self.write_io('{"T":9,"P1":2,"P2":1}\n')
+    def calib_save(self):
+        self.write_io('{"T":9,"P1":2,"P2":10} \n')
+        
 
 class RoArmM1_Custom3FingerGripper(RoArmM1):
     def __init__(self, rate_hz=10, serial_port="/dev/ttyUSB0", gripper_limits=[42, 60]):
