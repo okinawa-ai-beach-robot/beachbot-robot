@@ -90,10 +90,19 @@ try:
 
             self.dtype = np.float32
 
+            self.downscale = 4
+            self.register_property("downscale",max_value=4, min_value=1, descr="Perform downscaling of original image input resolution before processing")
+
         def apply_model(self, inputs, units_percent=True):
             self.net.conf = self.conf_threshold  # NMS confidence threshold
             row, col, _ = inputs.shape
-            downscaler=4
+            downscaler=max(min(self.downscale, 4), 1)
+
+
+            if self.debug:
+                logger.debug(f"Postprocessing of image: downscale resolution by factor {downscaler}.")
+
+
             with torch.no_grad():
                 results = self.net([inputs[..., ::-1]], size=round(row/downscaler)) # detect on BGR->RGB pixel format
 
