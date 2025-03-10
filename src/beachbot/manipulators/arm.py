@@ -315,6 +315,9 @@ class Arm(HasProperties):
         ts = ts / speed_factor
         ts_start = time()
 
+        if self.debug:
+            logger.debug(f"Replay trajectory with speed_factor={speed_factor}, freq={freq}")
+
         # Index starts from 1 to allow ts difference calc
         # Ends two from the end to allow any speed_factor while waiting
         # for final position before opening/closing gripper
@@ -555,8 +558,6 @@ class Arm(HasProperties):
         y_fac = (p_q[1]-p3[1])/(p1[1]-p3[1])
         traj_qs = (1-y_fac)*x2_traj_qs + (y_fac)*x1_traj_qs
         traj_ts = (1-y_fac)*x2_traj_ts + (y_fac)*x1_traj_ts
-
-        #logger.debug(f"Interpolated trajectory with factos at offset {offset} with params {x_fac} {y_fac} {[p1,p2,p3,p4]}")
 
         return Trajectory(ts = traj_ts, qs=traj_qs)
 
