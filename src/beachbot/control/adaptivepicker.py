@@ -19,7 +19,7 @@ class AdaptivePickupController(RobotController):
         self.register_property("manual_mode", descr="Do not pickup automatically, wait for user properties changes")
 
         self.setpoint_x = 0.5
-        #self.setpoint_y = 0.63 # 0.63 is good for current simulation file
+        #self.setpoint_y = 0.56 # 0.56 is good for current simulation file
         self.setpoint_y = 0.26 # 0.28 is good for robot lowr edge
         self.register_property("setpoint_x", descr="Horizontal taget position in relative image coordinates, e.g. 0.25 is left quarter of image; 0.5 is image center.")
         self.register_property("setpoint_y", descr="Vertical target position in rleative image coordinates, e.g. 0.25 is lower quarter of image; 0.5 is image center.")
