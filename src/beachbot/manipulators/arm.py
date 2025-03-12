@@ -14,7 +14,8 @@ class Arm(HasProperties):
     def __init__(self, gripper_limits=None) -> None:
         super().__init__()
 
-        self.debug=True
+        # Debug mode, can be activated via webui as well, default off
+        self.debug=False
         self.register_property("debug") 
 
         self.basepath = config.BEACHBOT_HOME
