@@ -24,7 +24,7 @@ class ApproachDebris(RobotController):
 
         # Initial target setpoints, in relative position (0..1)
         default_setpoint_x = 0.5
-        # default_setpoint_y = 0.63 # 0.63 is good for current simulation file
+        # default_setpoint_y = 0.62 # 0.62 is good for current simulation file
         default_setpoint_y = 0.47 # good for Jetson camera
 
 
