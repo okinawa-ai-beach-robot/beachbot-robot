@@ -210,6 +210,7 @@ async def toggle_detection(ai_model=Yolo5TorchHub):
         robot.set_detector(None)
     ui_model_info.refresh(robot)
     ui_config_panel.refresh()
+    ui.notification("Detector with default config loaded!")
 
 
 
@@ -221,6 +222,7 @@ async def toggle_controller(robot_controller=ControllerSelector):
     ui_model_info.refresh(robot)
     ui_config_panel.refresh()
     print("Controller:", robot_controller)
+    ui.notification("Controller with default config loaded!")
 
 
 
@@ -240,62 +242,77 @@ def update_target_obj(robot : RobotInterface) -> None:
 
 
 
-def update_string_prop(robot : RobotInterface, name, val):
-    global target_obj
-    robot.set_property(name, val)
-    if name == "controller.approach.targetfilter" or name == "controller.targetfilter":
-        target_obj = str(val).split(",")
+
 
 
 @ui.refreshable
 def ui_config_panel(robot : RobotInterface) -> None:
     # TODO with ui.scroll_area().classes('w-full h-full border'):
-    if robot is not None:
-        prop_classes={}
-        for prop in robot.list_property_names():    
-            # update global target object list for box drawing:
-            update_target_obj(robot)
+    try:
+        if robot is not None:
+            origstate = { n: robot.get_property(n) for n in robot.list_property_names()}
+            def update_prop(robot : RobotInterface, name, val):
+                robot.set_property(name, val)
+                origstate[name]=val
+                modified_state = { n: robot.get_property(n) for n in robot.list_property_names()}
+                if origstate!=modified_state:
+                    # Other properties changed, reload config list!
+                    ui.notification("Robot configuration changed!")
+                    ui_config_panel.refresh(robot)
+                update_target_obj(robot)
 
 
-            value = robot.get_property(prop)
-            value_bounds = robot.get_property_bounds(prop)
-            if "." in prop:
-                value_subclass = prop.rsplit(".", 1)[0]
-            else:
-                value_subclass = None
-            
+            prop_classes={}
+            for prop in robot.list_property_names():    
+                # update global target object list for box drawing:
+                update_target_obj(robot)
 
-            if value_subclass:
-                if value_subclass in prop_classes:
-                    targetelement_parent = prop_classes[value_subclass]
+
+                value = robot.get_property(prop)
+                value_bounds = robot.get_property_bounds(prop)
+                if "." in prop:
+                    value_subclass = prop.rsplit(".", 1)[0]
                 else:
-                    targetelement_parent =  ui.expansion("robot."+value_subclass+':', icon='tune').classes("w-full justify-between no-wrap")
-                    prop_classes[value_subclass] = targetelement_parent
+                    value_subclass = None
+                
 
-                with targetelement_parent:
+                if value_subclass:
+                    if value_subclass in prop_classes:
+                        targetelement_parent = prop_classes[value_subclass]
+                    else:
+                        targetelement_parent =  ui.expansion("robot."+value_subclass+':', icon='tune').classes("w-full justify-between no-wrap")
+                        prop_classes[value_subclass] = targetelement_parent
+
+                    with targetelement_parent:
+                        targetelement = ui.row().classes("w-full justify-between no-wrap")
+                else:
                     targetelement = ui.row().classes("w-full justify-between no-wrap")
-            else:
-                targetelement = ui.row().classes("w-full justify-between no-wrap")
 
-            with targetelement:
-                tooltipelement = None
-                if type(value)==str:
-                        tooltipelement= ui.label("robot."+prop+":")
-                        ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: update_string_prop(robot, p, e.value))
-                elif type(value)==float or type(value)==int:
-                        if value_bounds is not None and value_bounds[0] is not None and value_bounds[1] is not None:
+                with targetelement:
+                    tooltipelement = None
+                    if type(value)==str:
+                            tooltipelement= ui.label("robot."+prop+":")
+                            ui.input(label="robot."+prop, placeholder='enter string', value=value, on_change=lambda e, p=prop: update_prop(robot, p, e.value))
+                    elif type(value)==float or type(value)==int:
+                            if value_bounds is not None and value_bounds[0] is not None and value_bounds[1] is not None:
+                                tooltipelement = ui.label("robot."+prop+":")
+                                ui.slider(min=value_bounds[0], max=value_bounds[1], step=(value_bounds[1]-value_bounds[0])/255.0, value=value, on_change=lambda e, p=prop: update_prop(robot, p, float(e.value))).props('label-always')
+                            else:
+                                tooltipelement = ui.label("robot."+prop+":")
+                                ui.number(label="robot."+prop, value=value, step=0.1, format='%.2f', on_change=lambda e, p=prop: update_prop(robot, p, float(e.value)))
+                    elif type(value)==bool:
                             tooltipelement = ui.label("robot."+prop+":")
-                            ui.slider(min=value_bounds[0], max=value_bounds[1], step=(value_bounds[1]-value_bounds[0])/255.0, value=value, on_change=lambda e, p=prop: robot.set_property(p, float(e.value))).props('label-always')
-                        else:
-                            tooltipelement = ui.label("robot."+prop+":")
-                            ui.number(label="robot."+prop, value=value, step=0.1, format='%.2f', on_change=lambda e, p=prop: robot.set_property(p, float(e.value)))
-                elif type(value)==bool:
-                        tooltipelement = ui.label("robot."+prop+":")
-                        ui.checkbox(value=value, on_change=lambda e, p=prop: robot.set_property(p, e.value))
+                            ui.checkbox(value=value, on_change=lambda e, p=prop: update_prop(robot, p, e.value))
 
-                tooltipstr = robot.get_property_description(prop)
-                if tooltipelement is not None and tooltipstr is not None:
-                    tooltipelement.tooltip(tooltipstr)
+                    tooltipstr = robot.get_property_description(prop)
+                    if tooltipelement is not None and tooltipstr is not None:
+                        tooltipelement.tooltip(tooltipstr)
+
+    except Exception as ex:
+        print(f"Error: {ex}")
+
+
+
 
 
 
@@ -586,6 +603,7 @@ tab_panel.on_value_change(tab_select_event)
 def store_config():
     robot.store_properties(robot_config_filename)
     logger.info(f"Robot Config stored as {robot_config_filename}")
+    ui.notification("Config stored as default on startup!")
 btn_store.on_click(store_config)
 
 def load_config():

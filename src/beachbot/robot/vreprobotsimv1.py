@@ -70,7 +70,7 @@ class VrepRobotSimV1(RobotInterface):
         self._vrep_sim.stopSimulation()
         # make sure socket connection is closed, 
         # in case another client wants to connect
-        del self._vrep_handle
+        del self._vrep_sim
 
     
     
