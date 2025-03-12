@@ -9,7 +9,7 @@ from beachbot.config import logger
 
 
 class ApproachDebris(RobotController):
-    def __init__(self):
+    def __init__(self, parent:RobotController = None):
         super().__init__()
 
         
@@ -41,7 +41,14 @@ class ApproachDebris(RobotController):
         self.pid_debug=False
 
         # Targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
-        self.targetfilter=["cup","toilet", "sports ball"]
+        if parent is not None and parent.get_property('targetfilter') is not None:
+            # Parent has targetfilter list
+            self.targetfilter_source = parent
+        else:
+            # Parent class does not have targetfilter, save property in this class, populate default variables
+            self.targetfilter_source = self
+            self.targetfilter=["cup","bottle", "trash_easy", "sports ball", "blue_blob"]
+            self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
 
         # Register controller parameters in gui, property changes computet in "property_changed_callback"
         self.register_property("kp_x", default_value=default_kp_x, descr="PID controller proportial gain for horizontal/rotational errors")
@@ -53,7 +60,7 @@ class ApproachDebris(RobotController):
         self.register_property("output_enabled", descr="Output estimated control values to motors.")
         self.register_property("pid_debug")
 
-        self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
+        
         
         # Create pid controller:
         self.ctrl = PIDController(setpoint_x=default_setpoint_x, setpoint_y=default_setpoint_y, kp=(default_kp_x, default_kp_y))
@@ -88,7 +95,7 @@ class ApproachDebris(RobotController):
         # It should only contain objects that match the targetfilter
         trash_to_follow: List[BoxDef] = []
         for det in detections:
-            if det.class_name in self.targetfilter:
+            if det.class_name in self.targetfilter_source.targetfilter:
                 trash_to_follow.append(det)
 
         if trash_to_follow is not None and len(trash_to_follow) > 0:

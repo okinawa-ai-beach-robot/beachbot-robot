@@ -7,7 +7,7 @@ from beachbot.config import logger
 
 
 class PickupController(RobotController):
-    def __init__(self):
+    def __init__(self, parent:RobotController = None):
         super().__init__()
         self.arm_thread=None
 

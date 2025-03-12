@@ -16,9 +16,12 @@ class ControllerSelector(RobotController):
         self.do_adative_picking=False
         self.register_property("do_adative_picking", descr="If true, use AdaptivePickupController(), otherwise use PickupController()")
 
+        self.targetfilter=["cup","bottle", "trash_easy", "sports ball", "blue_blob"]
+        self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
+
         self.controllers: dict[str, RobotController] = {
-            "approach": ApproachDebris(),
-            "pickup": PickupController(),
+            "approach": ApproachDebris(self),
+            "pickup": PickupController(self),
         }
         self.controller = self.controllers["approach"]
 
@@ -34,10 +37,10 @@ class ControllerSelector(RobotController):
             # re-instanciate class for pickup.
             if self.do_adative_picking:
                 logger.info("Activate adative picker")
-                self.controllers["pickup"]=AdaptivePickupController()
+                self.controllers["pickup"]=AdaptivePickupController(self)
             else:
                 logger.info("Activate default picker")
-                self.controllers["pickup"]=PickupController()
+                self.controllers["pickup"]=PickupController(self)
 
             # Collect all properties of used controllers and add to this class
             for ctrl_name in self.controllers.keys():

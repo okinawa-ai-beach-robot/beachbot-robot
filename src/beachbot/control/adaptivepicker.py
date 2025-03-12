@@ -9,11 +9,11 @@ from beachbot.utils.timer import Timer
 
 
 class AdaptivePickupController(RobotController):
-    def __init__(self):
+    def __init__(self, parent:RobotController = None):
         super().__init__()
         self.arm_thread=None
         self.stable_time=1.0 # one second object observation without interruption before picking up
-        self.timout_time=10.0 # if finding sable object takes mote than 20 seconds, abort ... 
+        self.timout_time=10.0 # if finding stable object takes mote than 10 seconds, abort ... 
 
         self.manual_mode=False
         self.register_property("manual_mode", descr="Do not pickup automatically, wait for user properties changes")
@@ -43,9 +43,16 @@ class AdaptivePickupController(RobotController):
         self.target_factor_y=0.8
         self.register_property("target_factor_y", descr="Target offset (y, vertical) in meters = image_dist_y * target_factor_y")
 
-        self.targetfilter=["cup","toilet", "sports ball", "blue_blob"]
-        self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
-        
+        # Targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
+        if parent is not None and parent.get_property('targetfilter') is not None:
+            # Parent has targetfilter list
+            self.targetfilter_source = parent
+        else:
+            # Parent class does not have targetfilter, save property in this class, populate default variables
+            self.targetfilter_source = self
+            self.targetfilter=["cup","bottle", "trash_easy", "sports ball", "blue_blob"]
+            self.register_property("targetfilter", ",".join(self.targetfilter), descr="List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. \"cup,sports ball,trash_easy\"")
+
         self.arm_speedfactor = 5
         self.register_property("arm_speedfactor", min_value=5, max_value=30, descr="Speed factor, adjusting of robot arm movement speed.")
 
@@ -84,7 +91,7 @@ class AdaptivePickupController(RobotController):
         # It should only contain objects that match the targetfilter
         trash_to_pick: List[BoxDef] = []
         for det in detections:
-            if det.class_name in self.targetfilter:
+            if det.class_name in self.targetfilter_source.targetfilter:
                 
                 trash_x = det.left+det.w/2
                 trash_y = 1.0 - (det.top+det.h) # 0 is bottom, 1 is top, trash lower y position is position on ground!
