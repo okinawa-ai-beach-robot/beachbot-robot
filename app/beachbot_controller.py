@@ -641,11 +641,10 @@ signal.signal(signal.SIGINT, handle_sigint)
 async def cleanup() -> None:
     # disconnect clients when the app is stopped with Ctrl+C
     robot.stop()
-    robot.cleanup()
     await disconnect()
+    joystick_end()
 
     print("Exit, cleaning up...")
-    joystick_end()
     robot.cleanup()
 app.on_shutdown(cleanup)
 
