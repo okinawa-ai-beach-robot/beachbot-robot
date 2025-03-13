@@ -128,8 +128,11 @@ class ApproachDebris(RobotController):
                 if self.target_arrival_frames > 30:
                     logger.info("ApproachDebris: Target reached")
                     return RESULT.SUCCESS
+            else:
+                self.target_arrival_frames = 0
 
         else:
+            self.target_arrival_frames = 0
             self.missing_target_count += 1
 
             if self.debug:
