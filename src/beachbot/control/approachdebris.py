@@ -19,8 +19,8 @@ class ApproachDebris(RobotController):
         self.target_arrival_frames = 0
 
         # Default values of pid controller gain horizontal/vertical, i.e. for rotaitonal/distance difference
-        default_kp_x = 160.0
-        default_kp_y = 160.0
+        default_kp_x = 260.0
+        default_kp_y = 260.0
 
         # Initial target setpoints, in relative position (0..1)
         default_setpoint_x = 0.5
@@ -34,8 +34,8 @@ class ApproachDebris(RobotController):
         self.register_property("setpoint_x", default_setpoint_x)
         self.register_property("setpoint_y", default_setpoint_y)
         
-        self.pid_error_threshold_x = 0.08 # with the adaptive gripper, we can be more "free" here as a default
-        self.pid_error_threshold_y = 0.05
+        self.pid_error_threshold_x = 0.05 # with the adaptive gripper, we can be more "free" here as a default
+        self.pid_error_threshold_y = 0.03
         self.register_property("pid_error_threshold_x", descr="Decide if target is reached if horizontal errors are below this threshold, coordinates in relative position (0..1)")
         self.register_property("pid_error_threshold_y", descr="Decide if target is reached if vertical errors are below this threshold, coordinates in relative position (0..1)")
         self.pid_debug=False
@@ -125,6 +125,7 @@ class ApproachDebris(RobotController):
 
             if abs(dir_error_x) < self.pid_error_threshold_x and abs(dir_error_y) < self.pid_error_threshold_y:
                 self.target_arrival_frames += 1
+                robot.set_target_velocity(0,0) #stop it!
                 if self.target_arrival_frames > 30:
                     logger.info("ApproachDebris: Target reached")
                     return RESULT.SUCCESS
