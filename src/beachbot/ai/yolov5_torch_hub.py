@@ -8,7 +8,6 @@ import os
 from os import listdir
 from os.path import isfile, join
 import yaml
-import time
 
 try:
 
@@ -104,17 +103,14 @@ try:
             if self.debug:
                 logger.debug(f"Postprocessing of image: downscale resolution by factor {downscaler}.")
 
+
             with torch.no_grad():
-                start = time.perf_counter()
                 results = self.net([inputs[..., ::-1]], size=320) # detect on BGR->RGB pixel format
-                end = time.perf_counter()
-                logger.debug(f"Inference time: {end - start:.6f}")
 
             res = results.xyxy[0].numpy(force=True)
             result_class_ids = []
             result_confidences = []
             result_boxes = []
-
 
             for i in range(res.shape[0]):
                 result_class_ids.append(int(res[i, 5]))
