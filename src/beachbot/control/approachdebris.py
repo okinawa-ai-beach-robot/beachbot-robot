@@ -125,9 +125,7 @@ class ApproachDebris(RobotController):
 
             if abs(dir_error_x) < self.pid_error_threshold_x and abs(dir_error_y) < self.pid_error_threshold_y:
                 self.target_arrival_frames += 1
-                robot.set_target_velocity(0, 0)
                 if self.target_arrival_frames > 30:
-                    
                     logger.info("ApproachDebris: Target reached")
                     return RESULT.SUCCESS
 
