@@ -1,3 +1,4 @@
+import time
 from beachbot.config import logger
 from beachbot.manipulators.motor import Motor
 
