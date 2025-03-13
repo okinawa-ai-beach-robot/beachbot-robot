@@ -538,7 +538,7 @@ with tab_panel:
                     with ui.tab_panel(one_view):
                         video_image = ui.interactive_image().classes("w-full h-full")
                     with ui.tab_panel(two_view):       
-                        controller_plot = ui.line_plot(n=6, limit=300, figsize=(9, 6), update_every=5).with_legend(['Motor1', 'Motor2', 'vel_target', "vel_current", "rot_target", "rot_current"], loc='upper center', ncol=3).classes('w-full h-full border')
+                        controller_plot = ui.line_plot(n=6, limit=300, figsize=(9, 6), update_every=5).with_legend(['Motor1', 'Motor2', 'Motor1_target', "Motor2_target", "vel_target", "rot_target"], loc='upper center', ncol=3).classes('w-full h-full border')
     with ui.tab_panel(two):
         with ui.dropdown_button("Select File...", auto_close=True) as selector:
             pass
@@ -561,10 +561,10 @@ def update_controller_plot():
         plotdata=[]
         plotdata.append([robot.platform.motor_right.get_speed()])
         plotdata.append([robot.platform.motor_left.get_speed()])
+        plotdata.append([robot.platform._target_motor_right_speed])
+        plotdata.append([robot.platform._target_motor_left_speed])
         plotdata.append([robot.platform._target_velocity])
-        plotdata.append([robot.platform._current_velocity])
         plotdata.append([robot.platform._target_angular_vel])
-        plotdata.append([robot.platform._current_angular_vel])
         now = datetime.now()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
