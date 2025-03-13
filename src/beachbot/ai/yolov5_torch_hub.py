@@ -105,7 +105,7 @@ try:
 
 
             with torch.no_grad():
-                results = self.net([inputs[..., ::-1]], size=round(row/downscaler)) # detect on BGR->RGB pixel format
+                results = self.net([inputs[..., ::-1]], size=320) # detect on BGR->RGB pixel format
 
             res = results.xyxy[0].numpy(force=True)
             result_class_ids = []
