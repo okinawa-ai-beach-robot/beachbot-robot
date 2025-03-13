@@ -150,12 +150,12 @@ try:
 
     class BeachbotYolo5TorchHub(Yolo5TorchHub):
         """Default beachbot model
-        default model file set to: beachbot_yolov5s_beach-cleaning-object-detection__v8-yolotrain__yolov5pytorch_640_finetune
+        default model file set to: beachbot_yolov5s_beach-cleaning-object-detection__v8-yolotrain__yolov5pytorch_320_finetune
         uses cuda acceleration if available
         """
         def __init__(self, model_file=None, use_accel=True):
             if model_file is None:
-                model_file = str(config.BEACHBOT_MODELS) + "/beachbot_yolov5s_beach-cleaning-object-detection__v8-yolotrain__yolov5pytorch_640_finetune/"
+                model_file = str(config.BEACHBOT_MODELS) + "/beachbot_yolov5s_beach-cleaning-object-detection__v8-yolotrain__yolov5pytorch_320_finetune/"
             super().__init__(model_file, use_accel)
 
 except ModuleNotFoundError as ex:
