@@ -20,7 +20,12 @@ class AdaptivePickupController(RobotController):
 
         self.setpoint_x = 0.5
         #self.setpoint_y = 0.56 # 0.56 is good for current simulation file
-        self.setpoint_y = 0.26 # 0.28 is good for robot lowr edge
+        self.setpoint_y = 0.18 # 0.26 is good for robot lowr edge (yolo model?)
+        # 0.18 also (not 0.23) for beachbot data and jetson robot
+        # 0.18 good for yolo orig model
+        #
+
+        
         self.register_property("setpoint_x", descr="Horizontal taget position in relative image coordinates, e.g. 0.25 is left quarter of image; 0.5 is image center.")
         self.register_property("setpoint_y", descr="Vertical target position in rleative image coordinates, e.g. 0.25 is lower quarter of image; 0.5 is image center.")
 
