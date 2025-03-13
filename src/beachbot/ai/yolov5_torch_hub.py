@@ -19,7 +19,7 @@ try:
 
         def __init__(self, model_file=None, use_accel=True) -> None:
             super().__init__(None)
-
+            logger.debug(f"model_file: {model_file}")
 
             if model_file is None:
                 model_file = str(config.BEACHBOT_MODELS) + "/Original_YOLOv5s/"
@@ -92,6 +92,7 @@ try:
 
             self.downscale = 4
             self.register_property("downscale",max_value=4, min_value=1, descr="Perform downscaling of original image input resolution before processing")
+            logger.debug(f"model_file: {model_file}")
 
         def apply_model(self, inputs, units_percent=True):
             self.net.conf = self.conf_threshold  # NMS confidence threshold
