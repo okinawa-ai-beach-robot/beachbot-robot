@@ -6,6 +6,7 @@ from beachbot.control.approachdebris import ApproachDebris
 from beachbot.control.pickupcontroller import PickupController
 from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.config import logger
+from beachbot.control.roamaround import RoamAround
 
 
 class JasonController(RobotController):
@@ -15,6 +16,7 @@ class JasonController(RobotController):
         self.controllers: dict[str, RobotController] = {
             "approach": ApproachDebris(),
             "pickup": PickupController(),
+            "roam" : RoamAround(),
         }
         self.controller = self.controllers["approach"]
 
@@ -34,4 +36,6 @@ class JasonController(RobotController):
                 self.controller = self.controllers["approach"]
 
         return RESULT.BUSY
+
+
 
