@@ -96,9 +96,15 @@ try:
         def apply_model(self, inputs, units_percent=True):
             self.net.conf = self.conf_threshold  # NMS confidence threshold
             row, col, _ = inputs.shape
+            downscaler=max(min(self.downscale, 4), 1)
+
+
+            if self.debug:
+                logger.debug(f"Postprocessing of image: downscale resolution by factor {downscaler}.")
+
 
             with torch.no_grad():
-                results = self.net([inputs[..., ::-1]]) # detect on BGR->RGB pixel format
+                results = self.net([inputs[..., ::-1]], size=round(row/downscaler)) # detect on BGR->RGB pixel format
 
             res = results.xyxy[0].numpy(force=True)
             result_class_ids = []
