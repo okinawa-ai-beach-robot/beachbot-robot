@@ -25,9 +25,10 @@ class RoamAround(RobotController):
             robot.set_target_velocity(0, 2*math.pi)
             if trash_to_follow is not None:
                 robot.stop()
-                return RESULT.SUCCESS
+                return RESULT.BUSY
         robot.set_target_velocity(0,math.pi/2)
         self.roam()
+        return RESULT.SUCCESS
 
 
     # set the robot to roam with paht with
