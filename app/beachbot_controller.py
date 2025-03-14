@@ -106,7 +106,7 @@ target_obj="none"
 
 
 robot_config_filename = str(config.BEACHBOT_CONFIG / "robo_config.json")
-
+logger.info(f"Config file loading from {robot_config_filename}")
 
 tab_names = ["Control", "Recordings"]
 
