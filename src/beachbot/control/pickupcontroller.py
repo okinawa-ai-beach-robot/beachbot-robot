@@ -1,3 +1,4 @@
+import time
 from threading import Thread
 from typing import List
 from beachbot.robot.robotinterface import RobotInterface
@@ -16,6 +17,12 @@ class PickupController(RobotController):
         robot.arm.pickup()
         logger.info("tossing")
         robot.arm.toss()
+        current_qs = robot.arm.get_joint_angles()
+        current_qs[3] += -5
+        current_qs[2] += -30
+        robot.arm.set_joint_targets(current_qs)
+        time.sleep(1)
+        robot.arm.open_gripper()
         robot.arm.go_home()
 
 
