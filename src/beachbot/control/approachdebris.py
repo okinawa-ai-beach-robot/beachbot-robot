@@ -103,7 +103,7 @@ class ApproachDebris(RobotController):
             # approach trash
             best_match = trash_to_follow[0]
             trash_x = best_match.left+best_match.w/2
-            trash_y = 1.0 - (best_match.top+best_match.h/2) # 0 is bottom, 1 is top
+            trash_y = 1.0 - (best_match.top+best_match.h) # 0 is bottom, 1 is top
 
             if self.debug:
                 print("trash position:", trash_x, trash_y)
