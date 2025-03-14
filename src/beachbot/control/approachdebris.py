@@ -118,8 +118,7 @@ class ApproachDebris(RobotController):
                            for n in dir_command]
 
             if self.debug:
-                print("dir_command:", dir_command)
-                print("dir_error:", (dir_error_x, dir_error_y))
+                logger.debug(f"dir_command: {dir_command}, dir_error: {dir_error_x, dir_error_y} target_arrival_frames: {self.target_arrival_frames}")
 
             if self.output_enabled:
                 robot.set_target_velocity(-dir_command[0], -dir_command[1])
