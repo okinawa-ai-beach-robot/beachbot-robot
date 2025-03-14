@@ -52,12 +52,12 @@ class DifferentialDrive(DriveSystem, threading.Thread):
         # The maximum value change per second of the contorl values (set_target)..
         # Values from set_target are gradually reached instaed of instantanously 
         # Meant to avoid quick back-forth movements or other unrealistic accelerations by the robot
-        self.max_rate_of_change = 400
+        self.max_rate_of_change = 254
 
         # compensation of motor friction:
         # scale 0-100% requested motor speed to pwm duty cycle self.friction_compensation-100 percent, motor speed of 0 results in 0 percent pwm duty cycle
         # must be between 0 and <100
-        self.friction_compensation=15
+        self.friction_compensation=30
 
         self._motor_left_speed = 0
         self._motor_right_speed = 0

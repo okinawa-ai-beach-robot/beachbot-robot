@@ -86,7 +86,11 @@ class JetsonCsiCameraOpenCV(threading.Thread):
             # TODO check: self._cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             self.ret_val, bgr_frame = self._cap.read()
             with self._lock:
-                self._frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+                try:
+                    self._frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+                except Exception as ex:
+                    print("TODO, happens sometimes!!!!", ex, bgr_frame)
+
         self._cap.release()
 
     def read(self):
