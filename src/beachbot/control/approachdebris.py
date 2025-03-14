@@ -32,8 +32,8 @@ class ApproachDebris(RobotController):
         self.register_property("setpoint_x", default_setpoint_x)
         self.register_property("setpoint_y", default_setpoint_y)
         
-        self.pid_error_threshold_x = 0.08 # with the adaptive gripper, we can be more "free" here as a default
-        self.pid_error_threshold_y = 0.05
+        self.pid_error_threshold_x = 0.02 # with the adaptive gripper, we can be more "free" here as a default
+        self.pid_error_threshold_y = 0.02
         self.register_property("pid_error_threshold_x", descr="Decide if target is reached if horizontal errors are below this threshold, coordinates in relative position (0..1)")
         self.register_property("pid_error_threshold_y", descr="Decide if target is reached if vertical errors are below this threshold, coordinates in relative position (0..1)")
         self.pid_debug=False
