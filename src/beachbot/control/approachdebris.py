@@ -11,9 +11,7 @@ from beachbot.config import logger
 class ApproachDebris(RobotController):
     def __init__(self, parent:RobotController = None):
         super().__init__()
-
-        
-        
+        self.minimum_output = 15
         # Used for a basic hysteresis filter
         self.missing_target_count = 0
         self.target_arrival_frames = 0
@@ -113,6 +111,11 @@ class ApproachDebris(RobotController):
             dir_command = self.ctrl.get_output(trash_x, trash_y, self.pid_debug)
             dir_error_x = self.ctrl.prev_error_x
             dir_error_y = self.ctrl.prev_error_y
+
+            # Ignore low outputs to prevent motor stalling
+            dir_command = [min(max(n, -100), -self.minimum_output) if n < -self.minimum_output else
+                           max(min(n, 100), self.minimum_output) if n > 15 else 0
+                           for n in dir_command]
 
             if self.debug:
                 print("dir_command:", dir_command)
