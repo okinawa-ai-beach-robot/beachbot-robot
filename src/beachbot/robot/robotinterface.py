@@ -273,7 +273,7 @@ class RobotInterface(HasProperties):
                 logger.error(ex.msg)
 
         # load remaining properties as defined in config file
-        super().import_state(storage)
+        return super().import_state(storage)
 
 
 

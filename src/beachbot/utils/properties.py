@@ -135,6 +135,27 @@ class HasProperties(object):
                 if name not in self._properties:
                     return None
                 return (self._properties[name].min, self._properties[name].max)
+            
+    def reset_property(self, name:str) -> None:
+        """
+        Reset property to default value.
+        """
+        if "." in name:
+            # retrieve property values from children ....
+            childname, propname=  name.split(".", 1)
+            if childname in self._properties_children:
+                print(childname, childname)
+                propval = self._properties_children[childname].reset_property(propname)
+                return
+            else:
+                raise ValueError(f"Child property module {childname} not known, can not get property bounds of property {propname}")
+        else:
+            propval=None
+            with self._properties_lock:
+                if name in self._properties:
+                    propval = self._properties[name].default
+            if propval is not None:
+                self.set_property(name, propval)
 
 
 
@@ -168,21 +189,25 @@ class HasProperties(object):
         return storage
     
     def import_state(self, storage:dict):
+        unresolved={}
         for key, value in storage.items():
             try:
                 self.set_property(key, value)
             except ValueError as ex:
                 # ignore saved properties not available:
-                pass
+                unresolved[key]=value
+        return unresolved
     
-    def store_properties(self, file):
+    def store_properties(self, file, payload={}):
         storage = self.export_state()
+        # overwrite given payload properties:
+        storage.update(payload)
         with open(file, 'w') as json_file:
             json.dump(storage, json_file)
 
     def load_properties(self, file):
         with open(file, 'r') as json_file:
             storage = json.load(json_file)
-        self.import_state(storage)
+        return self.import_state(storage)
 
         

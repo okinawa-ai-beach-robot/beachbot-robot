@@ -1,5 +1,8 @@
 # the future is now... (avoids printing pytoch warnings about deprecated functions to console)
+import json
 import warnings
+
+from fastapi.responses import JSONResponse
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
@@ -97,12 +100,18 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("--sim", default=False, action="store_true", help="Execute in simulation instead of on real robot")
 parser.add_argument("--cfgload", default=False, action="store_true", help="Reload stored configuration on startup")
+parser.add_argument(
+    '--cfgfile',
+    type=str,
+    help='Optional config file to read from',
+)
 args = parser.parse_args()
 
 
 print("Beachbot startup\n config:\n", vars(config))
 
 target_obj="none"
+hidden_properties=[]
 
 
 robot_config_filename = str(config.BEACHBOT_CONFIG / "robo_config.json")
@@ -263,7 +272,10 @@ def ui_config_panel(robot : RobotInterface) -> None:
 
 
             prop_classes={}
-            for prop in robot.list_property_names():    
+            for prop in robot.list_property_names():   
+                if prop in hidden_properties:
+                    # Ignore hidden property elements, do not show in GUI
+                    continue 
                 # update global target object list for box drawing:
                 update_target_obj(robot)
 
@@ -307,6 +319,18 @@ def ui_config_panel(robot : RobotInterface) -> None:
                     tooltipstr = robot.get_property_description(prop)
                     if tooltipelement is not None and tooltipstr is not None:
                         tooltipelement.tooltip(tooltipstr)
+                    with targetelement:
+                        with ui.context_menu():
+                            def hide_el(elstr):
+                                hidden_properties.append(elstr)
+                                ui_config_panel.refresh()
+                            def reset_el(elstr):
+                                robot.reset_property(elstr)
+                                ui_config_panel.refresh()
+
+                            ui.menu_item('Hide', auto_close=False,on_click=lambda _,elstr=prop: hide_el(elstr))
+                            ui.separator()
+                            ui.menu_item('Reset', auto_close=False, on_click=lambda _,elstr=prop: reset_el(elstr))
 
     except Exception as ex:
         print(f"Error: {ex}")
@@ -434,6 +458,32 @@ with ui.tabs().classes("w-full") as tabs:
     two = ui.tab(tab_names[1])
 tab_panel = ui.tab_panels(tabs, value=one).classes("w-full")
 
+with ui.dialog() as load_as_dialog, ui.card():
+    ui.label('Load config from uploaded file (select by clicking + symbol)!')
+    def onfile(e):
+        global hidden_properties
+        text = e.content.read().decode('utf-8')
+        ui.notify(f'Uploaded {e.name} {text}')
+        storage = json.loads(text)
+        print(storage)
+        cfg = robot.import_state(storage).get("gui.hidden_properties", "")
+        if len(cfg)>0:
+            hidden_properties = cfg.split(",")
+        else:
+            hidden_properties = []
+        
+        ui_config_panel.refresh()
+        ui_model_info.refresh()
+        model_selector.set_value(None)
+        controller_selector.set_value(None)
+        print("controller is", robot.get_controller())
+        logger.info(f"Robot Config loaded from webupload")
+        load_as_dialog.close()
+
+    ui.upload(on_upload=onfile,
+            on_rejected=lambda: ui.notify('File Rejected!'), auto_upload=True, multiple=False,
+            max_file_size=1_000_000).props('accept=.json').classes('max-w-full')
+    ui.button('Close', on_click=load_as_dialog.close)
 with tab_panel:
     with ui.tab_panel(one):
         with ui.row().classes("w-full"):
@@ -521,8 +571,11 @@ with tab_panel:
                             cart_r_slider = ui.slider(min=-45, max=45, step=1.0, value=0.0, on_change=lambda x: arm_action_cartesian()).props('label')
                     with ui.tab_panel(four_ctrl).classes('w-full h-full border'):
                         with ui.row():
-                            btn_store = ui.button("Store Config")
-                            btn_load = ui.button("Load Config")
+                            with ui.dropdown_button('Config Options', auto_close=True):
+                                btn_store = ui.item('Store  Default Config')
+                                btn_load = ui.item('Load Default Config')
+                                btn_store_to = ui.item('Download  Config As File')
+                                btn_load_form = ui.item('Load Config From File')
                             ui.button("Refresh", on_click=lambda _: ui_config_panel.refresh())
                         ui_config_panel(robot)
 
@@ -601,25 +654,62 @@ tab_panel.on_value_change(tab_select_event)
 
 
 def store_config():
-    robot.store_properties(robot_config_filename)
+    global hidden_properties
+    robot.store_properties(robot_config_filename, payload={"gui.hidden_properties": ",".join(hidden_properties)})
     logger.info(f"Robot Config stored as {robot_config_filename}")
     ui.notification("Config stored as default on startup!")
 btn_store.on_click(store_config)
 
-def load_config():
-    robot.load_properties(robot_config_filename)
+def load_config(filepath = None):
+    global hidden_properties
+    if filepath is None:
+        filepath = robot_config_filename
+    cfg = robot.load_properties(filepath).get("gui.hidden_properties", "")
+    if len(cfg)>0:
+        hidden_properties = cfg.split(",")
+    else:
+        hidden_properties = []
+
     ui_config_panel.refresh()
     ui_model_info.refresh()
     model_selector.set_value(None)
     controller_selector.set_value(None)
     print("controller is", robot.get_controller())
-    logger.info(f"Robot Config loaded from {robot_config_filename}")
+    logger.info(f"Robot Config loaded from {filepath}")
 
 btn_load.on_click(load_config)
 
 
+# def store_config_to():
+#     global hidden_properties
+#     storage = robot.export_state()
+#     storage.update({"gui.hidden_properties": ",".join(hidden_properties)})
+#     print(storage)
+#     print({"gui.hidden_properties": ",".join(hidden_properties)})
+#     ui.download(json.dumps(storage), "robot_config.json", media_type="txt")
+
+btn_store.on_click(store_config)
+
+@app.get("/config.json")
+def provide_config():
+    storage = robot.export_state()
+    storage.update({"gui.hidden_properties": ",".join(hidden_properties)})
+    return JSONResponse(content=storage, headers= {'Content-Disposition': f'attachment; filename="config.json"'})
+
+btn_store_to.on_click(lambda _:ui.navigate.to("/config.json"))
+
+def load_config_from():
+    load_as_dialog.open()
+
+btn_load_form.on_click(load_config_from)
+
+
+
 if args.cfgload:
     load_config()
+elif args.cfgfile:
+    load_config(filepath=args.cfgfile)
+
 
 
 
