@@ -31,7 +31,7 @@ class VrepRobotSimV1(RobotInterface):
         self._vrep_init(scene)
 
         # Camera Setup:
-        self.cameradevices[RobotInterface.CAMERATYPE.FRONT] = VrepCameraSim(self._vrep_sim, "cam_front", perspective_angle_overwrite=75, rotation_offset=-10)
+        self.cameradevices[RobotInterface.CAMERATYPE.FRONT] = VrepCameraSim(self._vrep_sim, "cam_front", perspective_angle_overwrite=75, rotation_offset=0)
 
         # Motor Controller Setup:
         motor_left : Motor = VrepMotorSim(self._vrep_sim, "motor_left")
