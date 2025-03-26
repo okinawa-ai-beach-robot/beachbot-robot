@@ -1,6 +1,6 @@
-f#rom typing import List
-f#rom beachbot.control.robotcontroller import RobotController, BoxDef
-f#rom beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
+from typing import List
+from beachbot.control.robotcontroller import RobotController, BoxDef
+from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.approachdebris import ApproachDebris
 from beachbot.control.pickupcontroller import PickupController
@@ -56,6 +56,8 @@ class ControllerSelector(RobotController):
         if len(self.target_order) > 0:
             self.current_target = self.target_order[0]
             self.approachDebris.targetfilter = self.current_target
+            if self.debug:
+                logger.info(f"Next target object {self.current_target} selected!")
         else:
             self.current_target = None
             self.approachDebris.targetfilter = None
