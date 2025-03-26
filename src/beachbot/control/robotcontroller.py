@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-import threading
-from typing import List, Union, Tuple
+from typing import List
 from enum import Enum
 
 from beachbot.utils.properties import HasProperties
@@ -13,7 +12,7 @@ class BoxDef:
     w: float = 0.5
     h: float = 0.5
     class_name: str = "unknown"
-    confidence : float = -1
+    confidence: float = -1
 
 
 class CONTROLLERRESULT(Enum):
@@ -22,17 +21,12 @@ class CONTROLLERRESULT(Enum):
     BUSY = 3
 
 
-
-
 class RobotController(HasProperties):
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         super().__init__()
 
-        self.debug=False
-        self.register_property("debug") 
-
+        self.debug = False
+        self.register_property("debug")
 
     def update(self, robot, detections: List[BoxDef] = None) -> CONTROLLERRESULT:
         raise NotImplementedError()
-    
-
