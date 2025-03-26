@@ -44,7 +44,7 @@ def download(
         # Only download if the file has been modified more recently than local version
         remote_timestamp = file_content.last_modified_datetime
         logger.info(f"remote_timestamp: {remote_timestamp}")
-        logger.info("local_timestamp: {local_timestamp}")
+        logger.info(f"local_timestamp: {local_timestamp}")
         if local_timestamp is None or remote_timestamp > local_timestamp:
             with open(local_file_path, "wb") as f:
                 sha = file_content.sha
