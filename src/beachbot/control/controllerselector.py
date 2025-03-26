@@ -1,6 +1,6 @@
-from typing import List
-from beachbot.control.robotcontroller import RobotController, BoxDef
-from beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
+f#rom typing import List
+f#rom beachbot.control.robotcontroller import RobotController, BoxDef
+f#rom beachbot.control.robotcontroller import CONTROLLERRESULT as RESULT
 from beachbot.robot.robotinterface import RobotInterface
 from beachbot.control.approachdebris import ApproachDebris
 from beachbot.control.pickupcontroller import PickupController
@@ -11,6 +11,7 @@ from beachbot.config import logger
 class ControllerSelector(RobotController):
     def __init__(self):
         super().__init__()
+        self.target_order = []
 
         self.do_adative_picking = False
         self.register_property(
@@ -18,15 +19,11 @@ class ControllerSelector(RobotController):
             descr="If true, use AdaptivePickupController(), otherwise use PickupController()",
         )
 
-        self.register_property(
-            "targetfilter",
-            ",".join(self.targetfilter),
-            descr='List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. "cup,sports ball,trash_easy"',
-        )
-
+        self.approachDebris = ApproachDebris(self)
+        self.pickup = PickupController(self)
         self.controllers: dict[str, RobotController] = {
-            "approach": ApproachDebris(self),
-            "pickup": PickupController(self),
+            "approach": self.approachDebris,
+            "pickup": self.pickup,
         }
         self.controller = self.controllers["approach"]
 
@@ -54,15 +51,19 @@ class ControllerSelector(RobotController):
                     class_instance=self.controllers[ctrl_name], class_name=ctrl_name
                 )
 
-    def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
-        if self.controller is self.controllers["approach"]:
-            # check if approachDebris is done
-            if self.controller.update(robot, detections) == RESULT.SUCCESS:
-                logger.info("approachDebris done, switching to pickup...")
-                self.controller = self.controllers["pickup"]
-        elif self.controller is self.controllers["pickup"]:
-            if self.controller.update(robot, detections) != RESULT.BUSY:
-                logger.info("pickup done, switching to approachDebris...")
-                self.controller = self.controllers["approach"]
+    def next_target(self):
+        self.target_order.pop(0)
+        if len(self.target_order) > 0:
+            self.current_target = self.target_order[0]
+            self.approachDebris.targetfilter = self.current_target
+        else:
+            self.current_target = None
+            self.approachDebris.targetfilter = None
 
-        return RESULT.BUSY
+    def target_visible(self, detections: List[BoxDef] = None) -> bool:
+        if detections is None:
+            return False
+        for det in detections:
+            if det.class_name == self.current_target:
+                return True
+        return False

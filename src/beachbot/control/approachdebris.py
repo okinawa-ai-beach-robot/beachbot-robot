@@ -43,21 +43,6 @@ class ApproachDebris(RobotController):
         )
         self.pid_debug = False
 
-        # Targetfilter: list of target classes to follow, e.g. "trash_easy,trash_hard":
-        if parent is not None and parent.get_property("targetfilter") is not None:
-            # Parent has targetfilter list
-            self.targetfilter_source = parent
-        else:
-            # Parent class does not have targetfilter, save property in this class, populate default variables
-            self.targetfilter_source = self
-            self.targetfilter = [
-            ]
-            self.register_property(
-                "targetfilter",
-                ",".join(self.targetfilter),
-                descr='List of classes, separated by comma; no spaces allowed, class names with space are accepted. E.g. "cup,sports ball,trash_easy"',
-            )
-
         # Register controller parameters in gui, property changes computet in "property_changed_callback"
         self.register_property(
             "kp_x",
@@ -106,6 +91,15 @@ class ApproachDebris(RobotController):
         else:
             super().property_changed_callback(name)
 
+    def search(self, robot: RobotInterface):
+        """
+        Search when nothing visible
+
+        Args:
+            robot (RobotInterface): Robot interface
+        """
+        robot.set_target_velocity(0, 50)
+
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None) -> bool:
         """
         Approach trash
@@ -122,7 +116,7 @@ class ApproachDebris(RobotController):
         # It should only contain objects that match the targetfilter
         trash_to_follow: List[BoxDef] = []
         for det in detections:
-            if det.class_name in self.targetfilter_source.targetfilter:
+            if det.class_name in self.targetfilter:
                 trash_to_follow.append(det)
 
         if trash_to_follow is not None and len(trash_to_follow) > 0:
@@ -135,7 +129,7 @@ class ApproachDebris(RobotController):
             trash_y = 1.0 - (best_match.top + best_match.h)  # 0 is bottom, 1 is top
 
             if self.debug:
-                print("trash position:", trash_x, trash_y)
+                logger.debug(f"{self.targetfilter} found at: {trash_x, trash_y}")
 
             dir_command = self.ctrl.get_output(trash_x, trash_y, self.pid_debug)
             dir_error_x = self.ctrl.prev_error_x
@@ -181,10 +175,9 @@ class ApproachDebris(RobotController):
                 print("could not see anything!", self.missing_target_count)
 
             if self.missing_target_count > 10:
-                # Rotate robot, TODO add a 3rd controller for "random seach"
-                # TODO return RESULT.FAILURE to indicate controller selector to handle the situation appropriately
-                # for the controllerselector to check if (1) approaching, (2) reached, (3) Lost
                 if self.output_enabled:
-                    robot.set_target_velocity(angular_velocity=0, velocity=0)
-
+                    self.search(robot)
+                    logger.info("ApproachDebris: Searching")
+                else:
+                    robot.set_target_velocity(0, 0)
         return RESULT.BUSY
