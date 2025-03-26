@@ -121,9 +121,11 @@ class ApproachDebris(RobotController):
 
         if trash_to_follow is not None and len(trash_to_follow) > 0:
             self.missing_target_count = 0
-            # sort by confidence
+
+            # sort by confidence, object with highest confidence first in list!
             trash_to_follow.sort(key=lambda x: x.confidence, reverse=True)
-            # approach trash
+            
+            # approach trash, we calculate the center-bottom point of the object in the image:
             best_match = trash_to_follow[0]
             trash_x = best_match.left + best_match.w / 2
             trash_y = 1.0 - (best_match.top + best_match.h)  # 0 is bottom, 1 is top
@@ -171,13 +173,13 @@ class ApproachDebris(RobotController):
             self.target_arrival_frames = 0
             self.missing_target_count += 1
 
-            if self.debug:
-                print("could not see anything!", self.missing_target_count)
+
 
             if self.missing_target_count > 10:
                 if self.output_enabled:
                     self.search(robot)
-                    logger.info("ApproachDebris: Searching")
+                    if self.debug:
+                        print(f"Could not find my target object {self.targetfilter}! Try to do ApproachDebris::search() to find it!")
                 else:
                     robot.set_target_velocity(0, 0)
         return RESULT.BUSY
