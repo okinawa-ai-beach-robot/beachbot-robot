@@ -18,7 +18,6 @@ class ControllerSelector(RobotController):
             descr="If true, use AdaptivePickupController(), otherwise use PickupController()",
         )
 
-        self.targetfilter = ["cup", "bottle", "trash_easy", "sports ball", "blue_blob"]
         self.register_property(
             "targetfilter",
             ",".join(self.targetfilter),

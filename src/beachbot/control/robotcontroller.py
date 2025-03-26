@@ -27,6 +27,10 @@ class RobotController(HasProperties):
 
         self.debug = False
         self.register_property("debug")
+        self.targetfilter = []
 
     def update(self, robot, detections: List[BoxDef] = None) -> CONTROLLERRESULT:
         raise NotImplementedError()
+
+    def set_targetfilter(self, filter: List[str]):
+        self.targetfilter = filter
