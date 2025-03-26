@@ -51,11 +51,6 @@ class ApproachDebris(RobotController):
             # Parent class does not have targetfilter, save property in this class, populate default variables
             self.targetfilter_source = self
             self.targetfilter = [
-                "cup",
-                "bottle",
-                "trash_easy",
-                "sports ball",
-                "blue_blob",
             ]
             self.register_property(
                 "targetfilter",
