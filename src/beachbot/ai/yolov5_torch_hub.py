@@ -20,10 +20,10 @@ try:
         def __init__(self, model_file=None, use_accel=True) -> None:
             super().__init__(None)
             logger.debug(f"model_file: {model_file}")
-
+            
             if model_file is None:
                 model_file = str(config.BEACHBOT_MODELS) + "/Original_YOLOv5s/"
-            if "." in model_file:
+            if "." in model_file.split(os.sep)[-1]:
                 model_folder = os.path.dirname(os.path.realpath(model_file))
             else:
                 model_folder = os.path.realpath(model_file)
