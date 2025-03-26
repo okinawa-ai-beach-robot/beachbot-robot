@@ -3,11 +3,10 @@ from .debrisdetector import DebrisDetector
 from .yolov5_detector import Yolo5Detector
 import torch
 import numpy as np
-
 import os
-from os import listdir
-from os.path import isfile, join
 import yaml
+import shutil
+from pathlib import Path
 
 try:
 
@@ -20,9 +19,16 @@ try:
         def __init__(self, model_file=None, use_accel=True) -> None:
             super().__init__(None)
             logger.debug(f"model_file: {model_file}")
-            
             if model_file is None:
                 model_file = str(config.BEACHBOT_MODELS) + "/Original_YOLOv5s/"
+                # Check if yaml file exists
+                dest_path = Path(model_file) / "export_info.yaml"
+                # Copy only if the file doesn't exist
+                if not dest_path.exists():
+                    # Create parent directories for dest_path
+                    dest_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy(Path(__file__).parent.parent.parent.parent / "data" / "Original_YOLOv5s" / "export_info.yaml", dest_path)
+
             if "." in model_file.split(os.sep)[-1]:
                 model_folder = os.path.dirname(os.path.realpath(model_file))
             else:
