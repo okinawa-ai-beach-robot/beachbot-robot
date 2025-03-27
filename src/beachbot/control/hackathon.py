@@ -27,10 +27,6 @@ class Hackathon(ControllerSelector):
             # execute controller and test if it completed it's task:
             if self.controller.update(robot, detections) == RESULT.SUCCESS:
 
-                # print debug info in console:
-                if self.debug:
-                    logger.info(f"Object {self.current_target} approached, will try to pick it up!")
-
                 # select pickup controller as next controller:
                 self.controller = self.pickup
 
@@ -49,8 +45,6 @@ class Hackathon(ControllerSelector):
                 
                 # if picking up failed or succeeded, continue with approaching objects again next!
                 self.controller = self.approachDebris
-                if self.debug:
-                    logger.debug(f"Pickup done, next we try to approach the object {self.approachDebris.targetfilter }")
 
         return RESULT.BUSY
 
