@@ -99,6 +99,7 @@ else:
 
     robot = JetsonRobotV1()
 
+robot.arm.go_home()
 robot.start()
 logger.info("Wait (3s) for initalization...")
 time.sleep(3)

@@ -63,7 +63,7 @@ class Arm(HasProperties):
         self.q_home = [
             180.0,
             -12,
-            70,
+            50,
             45.0,
             0.0,
         ]  # Joint angle home position
