@@ -9,7 +9,7 @@ from beachbot.config import logger
 
 
 class ControllerSelector(RobotController):
-    def __init__(self):
+    def __init__(self, approachDebris: ApproachDebris = None, pickup: PickupController = None):
         super().__init__()
         self.target_order = []
 
@@ -19,8 +19,10 @@ class ControllerSelector(RobotController):
             descr="If true, use AdaptivePickupController(), otherwise use PickupController()",
         )
 
-        self.approachDebris = ApproachDebris(self)
-        self.pickup = PickupController(self)
+        if approachDebris is None:
+            self.approachDebris = ApproachDebris(self)
+        if pickup is None:
+            self.pickup = PickupController(self)
         self.controllers: dict[str, RobotController] = {
             "approach": self.approachDebris,
             "pickup": self.pickup,
