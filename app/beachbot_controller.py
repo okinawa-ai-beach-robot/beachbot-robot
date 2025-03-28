@@ -1,11 +1,25 @@
+import platform
+import ctypes
+from pathlib import Path
+if platform.system() == "Linux":
+    # Workaround
+    # Force libgomp to be loaded before other libraries consuming dynamic TLS (to avoid running out of STATIC_TLS)
+    # Avoids error: "...libGLdispatch.so.0: cannot allocate memory in static TLS block"
+    # Occurs on Jetson
+    preload_lib = Path("/lib/aarch64-linux-gnu/libGLdispatch.so.0")
+    if preload_lib.is_file():
+        ctypes.cdll.LoadLibrary(preload_lib.absolute().as_posix())
+    preload_lib = Path(
+        "/home/beachbot/.local/lib/python3.8/site-packages/torch.libs/libgomp-804f19d4.so.1.0.0"
+    )
+    if preload_lib.is_file():
+        ctypes.cdll.LoadLibrary(preload_lib.absolute().as_posix())
+
 import json
 import warnings
 from fastapi.responses import JSONResponse
 from datetime import datetime
 import os
-from pathlib import Path
-import platform
-import ctypes
 from os import walk
 import base64
 import signal
@@ -29,20 +43,6 @@ from argparse import ArgumentParser
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-
-if platform.system() == "Linux":
-    # Workaround
-    # Force libgomp to be loaded before other libraries consuming dynamic TLS (to avoid running out of STATIC_TLS)
-    # Avoids error: "...libGLdispatch.so.0: cannot allocate memory in static TLS block"
-    # Occurs on Jetson
-    preload_lib = Path("/lib/aarch64-linux-gnu/libGLdispatch.so.0")
-    if preload_lib.is_file():
-        ctypes.cdll.LoadLibrary(preload_lib.absolute().as_posix())
-    preload_lib = Path(
-        "/home/beachbot/.local/lib/python3.8/site-packages/torch.libs/libgomp-804f19d4.so.1.0.0"
-    )
-    if preload_lib.is_file():
-        ctypes.cdll.LoadLibrary(preload_lib.absolute().as_posix())
 
 # class BeachbotYolo5TorchHub(Yolo5TorchHub):
 #     def __init__(self, model_file=None, use_accel=True):
