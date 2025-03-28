@@ -25,8 +25,8 @@ class CustomApproachDebris(ApproachDebris):
 
 class Hackathon(ControllerSelector):
     def __init__(self):
-        approachDebris = CustomApproachDebris(self)
-        super().__init__(approachDebris)
+        self.approachDebris = CustomApproachDebris(self)
+        super().__init__(self.approachDebris)
 
         # Task 1: Create a list of objects to be picked up in order:
         self.target_order = [

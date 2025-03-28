@@ -63,6 +63,8 @@ class ControllerSelector(RobotController):
         else:
             self.current_target = None
             self.approachDebris.targetfilter = None
+            self.controller = None
+            self.robot.set_target_velocity(0, 0)
 
     def target_visible(self, detections: List[BoxDef] = None) -> bool:
         if detections is None:
