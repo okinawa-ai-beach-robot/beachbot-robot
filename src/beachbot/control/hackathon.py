@@ -43,6 +43,11 @@ class Hackathon(ControllerSelector):
         self.approachDebris.targetfilter = self.current_target
 
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
+
+        if self.current_target is None:
+            self.controller = None
+            return RESULT.SUCCESS
+
         # 1.) If current control mode if approaching
         if self.controller is self.approachDebris:
 
@@ -61,7 +66,7 @@ class Hackathon(ControllerSelector):
                 # Check if current_target no longer visible (not visible=picked up and placed in basked, if still visible it was dropped!)
                 if not self.target_visible(detections):
 
-                    self.next_target()
+                    self.next_target(robot)
 
                 # if picking up failed or succeeded, continue with approaching objects again next!
                 self.controller = self.approachDebris

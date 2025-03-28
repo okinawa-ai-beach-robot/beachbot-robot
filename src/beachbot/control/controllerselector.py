@@ -53,7 +53,7 @@ class ControllerSelector(RobotController):
                     class_instance=self.controllers[ctrl_name], class_name=ctrl_name
                 )
 
-    def next_target(self):
+    def next_target(self, robot: RobotInterface):
         self.target_order.pop(0)
         if len(self.target_order) > 0:
             self.current_target = self.target_order[0]
@@ -61,10 +61,11 @@ class ControllerSelector(RobotController):
             if self.debug:
                 logger.info(f"Next target object {self.current_target} selected!")
         else:
+            logger.info("All targets picked up!")
             self.current_target = None
             self.approachDebris.targetfilter = None
             self.controller = None
-            self.robot.set_target_velocity(0, 0)
+            robot.set_target_velocity(0, 0)
 
     def target_visible(self, detections: List[BoxDef] = None) -> bool:
         if detections is None:
