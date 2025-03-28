@@ -11,7 +11,7 @@
 - install extensions "python" and "gitgraph"
 - open terminal
 - confirm python is available (if not, install python with "add to path") 
-- in terminal type pip install -e . (in code folder)
+- in terminal type `pip install -e .` (in code folder)
 
 
 6. start coppeliasim, no further action required
