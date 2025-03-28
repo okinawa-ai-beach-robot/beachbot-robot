@@ -56,11 +56,23 @@ try:
                 try:
                     if os.path.isfile(model_folder + os.path.sep + "best.pt"):
                         logger.info("Loading pt model file")
+
+                        # Only on Windows: PosixPath not supported, fix, overwrite with WindowsPath
+                        if os.name == 'nt':
+                            import pathlib
+                            temp = pathlib.PosixPath
+                            pathlib.PosixPath = pathlib.WindowsPath
+
                         self.net = torch.hub.load(
                             "ultralytics/yolov5:master",
                             "custom",
-                            path=model_folder + os.path.sep + "best.pt",
+                            path=str(model_folder + os.path.sep + "best.pt"),
                         )
+
+                        if os.name == 'nt':
+                            # If PosixPath was overwritten, reset to original state...
+                            pathlib.PosixPath = temp
+
                     else:
                         logger.info("Loading onnx model file")
                         self.net = torch.hub.load(
