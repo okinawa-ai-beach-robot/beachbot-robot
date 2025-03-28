@@ -20,7 +20,7 @@ class CustomApproachDebris(ApproachDebris):
         Args:
             robot (RobotInterface): Robot interface
         """
-        robot.set_target_velocity(0, 0)
+        robot.set_target_velocity(0, 50)
 
 
 class Hackathon(ControllerSelector):
@@ -30,9 +30,9 @@ class Hackathon(ControllerSelector):
 
         # Task 1: Create a list of objects to be picked up in order:
         self.target_order = [
-            potential_targets[0],
-            potential_targets[1],
-            potential_targets[2],
+            potential_targets[39],
+            potential_targets[41],
+            potential_targets[32],
         ]
 
         # current target is the first target:
