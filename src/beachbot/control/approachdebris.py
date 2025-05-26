@@ -84,13 +84,13 @@ class ApproachDebris(RobotController):
         # It should only contain objects that match the targetfilter
         trash_to_follow: List[BoxDef] = []
         for det in detections:
-            if det.class_name in self.targetfilter:
+            if det.class_name in self.targetfilter and det.confidence>0.70:
                 trash_to_follow.append(det)
 
         if trash_to_follow is not None and len(trash_to_follow) > 0:
             self.missing_target_count = 0
-            # sort by confidence
-            trash_to_follow.sort(key=lambda x: x.confidence, reverse=True)
+            # sort by distance
+            trash_to_follow.sort(key= lambda x : x.top, reverse=True)
             # approach trash
             best_match = trash_to_follow[0]
             trash_x = best_match.left+best_match.w/2
@@ -130,3 +130,4 @@ class ApproachDebris(RobotController):
 
 
         return RESULT.BUSY
+
