@@ -33,4 +33,7 @@ class PickupController(RobotController):
         # Done, we are not busy anymore with pickup, delete thread for arm movement
         self.arm_thread = None
         #TODO assess situation and adjust return value appropriately, was pickup successful?
+        for detection in detections:
+                if detection.left <= 0.5 and detection.right>=0.5 and detection.top<=0.5 and detection.bottom>=0.5:
+                    return RESULT.FAILURE
         return RESULT.SUCCESS

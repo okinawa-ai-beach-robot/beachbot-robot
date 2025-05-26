@@ -18,24 +18,28 @@ class JasonController(RobotController):
             "pickup": PickupController(),
             "roam" : RoamAround(),
         }
-        self.controller = self.controllers["approach"]
+        self.controller = self.controllers["roam"]
 
         # Collect all properties of used controllers and add to this class
         for ctrl_name in self.controllers.keys():
             self.register_child_properties(class_instance=self.controllers[ctrl_name],class_name=ctrl_name)
 
     def update(self, robot: RobotInterface, detections: List[BoxDef] = None):
-        if self.controller is self.controllers["approach"]:
-            # check if approachDebris is done
+        if self.controller is self.controllers["roam"]:
+            logger.info("Roam")
             if self.controller.update(robot, detections) == RESULT.SUCCESS:
-                logger.info("approachDebris done, switching to pickup...")
-                self.controller = self.controllers["pickup"]
-        elif self.controller is self.controllers["pickup"]:
-            if self.controller.update(robot, detections) == RESULT.SUCCESS:
-                logger.info("pickup done, switching to approachDebris...")
                 self.controller = self.controllers["approach"]
+        elif self.controller is self.controllers["approach"]:
+            logger.info("Approach")
+            if self.controller.update(robot, detections) == RESULT.SUCCESS:
+                self.controller = self.controllers["pickup"]
+            else:
+                self.controller = self.controllers["roam"]
+        elif self.controller is self.controllers["pickup"]:
+            logger.info("Pickup")
+            if self.controller.update(robot, detections) == RESULT.SUCCESS:
+                self.controller = self.controllers["roam"]
 
-        return RESULT.BUSY
 
 
 
